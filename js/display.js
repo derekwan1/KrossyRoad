@@ -37,7 +37,7 @@ var grateColor = Colors.brownDark;
 var doorColor = Colors.brown;
 var handleColor = Colors.brownDark;
 var cars = [];
-var carsPerRoad = 3;
+var carsPerRoad = 6;
 /********** End step 1 **********/
 
 function init() {
@@ -50,7 +50,7 @@ function init() {
     // add the objects
 
     createGround();
-    createCar(3);
+    createCar(6, 3);
 
     // start a loop that will update the objects' positions
     // and render the scene on each frame
@@ -99,8 +99,8 @@ function createScene() {
     // Set the position of the camera
     camera.position.x = 0;
     camera.position.z = 0;
-    camera.position.y = 1200;
-    camera.lookAt(500, 0, 0);
+    camera.position.y = 400;
+    camera.lookAt(150, 0, 0);
 
     // Create the renderer
     renderer = new THREE.WebGLRenderer({
@@ -230,7 +230,7 @@ function createTire(radiusTop, radiusBottom, height, radialSegments, color, x, y
  * Template for Car with "advanced motion" (i.e., acceleration and deceleration,
  * rotation speed as a function of speed)
  */
-function Car() {
+function policeCar() {
 
     this.mesh = new THREE.Object3D();
 
@@ -278,6 +278,8 @@ function Car() {
     this.mesh.add(leftMirror);
     this.mesh.add(rightMirror);
 
+    this.speed = -10;
+
     var headLightLeftLight = new THREE.PointLight( 0xffcc00, 1, 100 );
     headLightLeftLight.position.set( 60, 5, 15 );
     this.mesh.add( headLightLeftLight );
@@ -286,20 +288,21 @@ function Car() {
     headLightRightLight.position.set( 50, 5, -15 );
     this.mesh.add( headLightRightLight );
 
-    orientation = Math.floor(Math.random() * 2);
-    if (orientation == 0) {
-       this.mesh.rotation.y = -Math.PI/2;
-    }
-    else {
-        this.mesh.rotation.y = Math.PI/2;
-    }
-
     function computeR(radians) {
         var M = new THREE.Matrix3();
         M.set(Math.cos(radians), 0, -Math.sin(radians),
               0,                 1,                  0,
               Math.sin(radians), 0,  Math.cos(radians));
         return M;
+    }
+
+    this.update = function(direction) {
+        if (this.mesh.rotation.y > 0) {
+            this.mesh.position.addScaledVector(direction, this.speed);
+        }
+        else {
+            this.mesh.position.addScaledVector(direction, -this.speed);
+        }  
     }
 
     this.moveForward = function() { movement.forward = true; }
@@ -317,20 +320,72 @@ function Car() {
     this.collidable = body;
 }
 
+function firstLane(currRoadNumber, lanesPerRoad) {
+    // Returns the x-coordinates to place a car in the first lane of a given road
+    return (Math.floor(currRoadNumber/lanesPerRoad) * 480) + 120;
+}
 
-function createCar(numCars) {
+function orientAndPlaceCars(lanesPerRoad) {
+    even_or_odd = Math.floor(Math.random() * 2); // If 0, odd lanes will have + direction. Vice versa.
+    if (even_or_odd == 0) {
+        var rotation = Math.PI/2;
+    }
+    else {
+        var rotation = -Math.PI/2;
+    }
+
+    var seen = {}; // A cache to eliminate the possibility that two cars are placed in the exact same position
+    for (var i = 0; i < cars.length; i+=1) {
+        curr_car = cars[i];
+        curr_car_lane = (curr_car.mesh.position.x - (480*Math.floor(i/carsPerRoad)))/120;
+        if (! ((curr_car_lane).toString() in seen)) {
+            seen[(curr_car_lane).toString()] = [];
+        }
+
+        if (curr_car_lane%2==1) {
+            curr_car.mesh.rotation.y = rotation;
+        }
+        if (curr_car_lane%2==0) {
+            curr_car.mesh.rotation.y = -rotation;
+        }
+
+        shift = Math.max(1, Math.floor(Math.random() * 4))*200;
+        lst = seen[(curr_car_lane).toString()];
+        while (lst.indexOf(shift) > -1) { // Checking that there is no car already at this position
+            shift = Math.max(1, Math.floor(Math.random() * 4))*200;
+        }
+        lst.push(shift);
+
+        if (curr_car.mesh.rotation.y > 0) {
+            curr_car.mesh.position.z = 300 + shift;
+        }
+        if (curr_car.mesh.rotation.y < 0) {
+            curr_car.mesh.position.z = -300 - shift;
+        }
+    }
+}
+
+
+function createCar(numCars, lanesPerRoad) {
     for (var i = 0; i < numCars; i+=1) {
-        car = new Car();
+        car = new policeCar();
+        var currRoadNumber = Math.floor(i/carsPerRoad);
+        var firstLaneOfThisRoad = firstLane(currRoadNumber, lanesPerRoad);
+
         car.mesh.position.y = 18;
-        car.mesh.position.x = 120*(i+1); // THIS needs to be generalized for any number of roads
-        if (car.mesh.rotation.y > 0) {
-            car.mesh.position.z = 1400;
-        }
+
+        if (i >= lanesPerRoad) { // Generalized for any number of roads  
+            car.mesh.position.x = firstLaneOfThisRoad + ((i%3)*120);
+        } 
         else {
-            car.mesh.position.z = -1400;
+            car.mesh.position.x = firstLaneOfThisRoad + 120*i;  
         }
-        scene.add(car.mesh);
         cars.push(car);
+    }
+    orientAndPlaceCars(lanesPerRoad);
+
+    for (var i = 0; i < cars.length; i+=1) {
+        scene.add(cars[i].mesh);
     }
 }
 
@@ -341,9 +396,9 @@ function createGround() {
     ground2 = createBox(120, 20, 3500, Colors.greenDark, 480, -10, -150);
     road2 = createBox(360, 10, 3700, Colors.roadBlack, 720, -10, -150);
     ground3 = createBox(120, 20, 4000, Colors.greenDark, 960, -10, -150);
-    road3 = createBox(360, 10, 4200, Colors.roadBlack, 1200, -10, -200);
-    ground4 = createBox(120, 20, 4400, Colors.greenDark, 1440, -10, -200);
-    road4 = createBox(360, 10, 4600, Colors.roadBlack, 1680, -10, -200);
+    //road3 = createBox(360, 10, 4200, Colors.roadBlack, 1200, -10, -200);
+    //ground4 = createBox(120, 20, 4400, Colors.greenDark, 1440, -10, -200);
+    //road4 = createBox(360, 10, 4600, Colors.roadBlack, 1680, -10, -200);
     for (var i = 0; i<4; i+=1) {
         for (var markerZPos = -1900; markerZPos < 1900; markerZPos+=230) {
             marker = createBox(10, 5, 100, Colors.white, 160 + (i*480), -7, markerZPos);
@@ -359,23 +414,19 @@ function createGround() {
     scene.add(ground2);
     scene.add(road2);
     scene.add(ground3);
-    scene.add(road3);
-    scene.add(ground4);
-    scene.add(road4);
+    //scene.add(road3);
+    //scene.add(ground4);
+    //scene.add(road4);
 }
 
 function loop(){
 
-    var direction = new THREE.Vector3(0, 0, -10);
+    var direction = new THREE.Vector3(0, 0, 1);
     for (var i = 0; i<cars.length;i+=1) {
-        if (cars[i].mesh.rotation.y > 0) {
-            cars[i].mesh.position.add(direction);
-        }
-        else {
-            cars[i].mesh.position.addScaledVector(direction, -1);
-        }
+        cars[i].update(direction);
+
         currRoadNumber = Math.floor(i/carsPerRoad);
-        if (Math.abs(cars[i].mesh.position.z) > 1500 + (currRoadNumber*300)) {
+        if (Math.abs(cars[i].mesh.position.z) > 900 + (currRoadNumber*100)) {
             cars[i].mesh.position.z = -cars[i].mesh.position.z;
         }
     }
