@@ -99,7 +99,7 @@ function createScene() {
     // Set the position of the camera
     camera.position.x = 0;
     camera.position.z = 0;
-    camera.position.y = 400;
+    camera.position.y = 500;
     camera.lookAt(150, 0, 0);
 
     // Create the renderer
@@ -326,9 +326,10 @@ function firstLane(currRoadNumber, lanesPerRoad) {
 }
 
 function orientAndPlaceCars(lanesPerRoad) {
-    even_or_odd = Math.floor(Math.random() * 2); // If 0, odd lanes will have + direction. Vice versa.
+    even_or_odd = Math.floor(Math.random() * 2); // If 0, odd lanes will have + direction and faster speed. Vice versa. 
     if (even_or_odd == 0) {
         var rotation = Math.PI/2;
+        // TODO: ADD OPTION FOR RANDOMIZED SPEEDS IN EVEN/ODD LANES
     }
     else {
         var rotation = -Math.PI/2;
@@ -344,6 +345,7 @@ function orientAndPlaceCars(lanesPerRoad) {
 
         if (curr_car_lane%2==1) {
             curr_car.mesh.rotation.y = rotation;
+
         }
         if (curr_car_lane%2==0) {
             curr_car.mesh.rotation.y = -rotation;
