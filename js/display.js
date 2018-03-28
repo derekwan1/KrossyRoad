@@ -37,7 +37,7 @@ var grateColor = Colors.brownDark;
 var doorColor = Colors.brown;
 var handleColor = Colors.brownDark;
 var cars = [];
-var carsPerRoad = 6;
+var carsPerRoad = 7;
 /********** End step 1 **********/
 
 function init() {
@@ -50,7 +50,7 @@ function init() {
     // add the objects
 
     createGround();
-    createCar(6, 3);
+    createCar(7, 3);
 
     // start a loop that will update the objects' positions
     // and render the scene on each frame
@@ -280,13 +280,13 @@ function policeCar() {
 
     this.speed = -10;
 
-    var headLightLeftLight = new THREE.PointLight( 0xffcc00, 1, 100 );
-    headLightLeftLight.position.set( 60, 5, 15 );
-    this.mesh.add( headLightLeftLight );
+    //var headLightLeftLight = new THREE.PointLight( 0xffcc00, 1, 100 );
+    //headLightLeftLight.position.set( 60, 5, 15 );
+    //this.mesh.add( headLightLeftLight );
 
-    var headLightRightLight = new THREE.PointLight( 0xffcc00, 1, 100 );
-    headLightRightLight.position.set( 50, 5, -15 );
-    this.mesh.add( headLightRightLight );
+    //var headLightRightLight = new THREE.PointLight( 0xffcc00, 1, 100 );
+    //headLightRightLight.position.set( 50, 5, -15 );
+    //this.mesh.add( headLightRightLight );
 
     function computeR(radians) {
         var M = new THREE.Matrix3();
