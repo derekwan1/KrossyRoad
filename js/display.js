@@ -37,7 +37,7 @@ var grateColor = Colors.brownDark;
 var doorColor = Colors.brown;
 var handleColor = Colors.brownDark;
 var cars = [];
-var carsPerRoad = 7;
+var carsPerRoad = 9;
 /********** End step 1 **********/
 
 function init() {
@@ -50,7 +50,7 @@ function init() {
     // add the objects
 
     createGround();
-    createCar(7, 3);
+    createCar(9, 3);
 
     // start a loop that will update the objects' positions
     // and render the scene on each frame
@@ -278,7 +278,8 @@ function policeCar() {
     this.mesh.add(leftMirror);
     this.mesh.add(rightMirror);
 
-    this.speed = -10;
+    this.speed = -6;
+    this.speedUpFactor = 1;
 
     //var headLightLeftLight = new THREE.PointLight( 0xffcc00, 1, 100 );
     //headLightLeftLight.position.set( 60, 5, 15 );
@@ -298,10 +299,10 @@ function policeCar() {
 
     this.update = function(direction) {
         if (this.mesh.rotation.y > 0) {
-            this.mesh.position.addScaledVector(direction, this.speed);
+            this.mesh.position.addScaledVector(direction, this.speed*this.speedUpFactor);
         }
         else {
-            this.mesh.position.addScaledVector(direction, -this.speed);
+            this.mesh.position.addScaledVector(direction, -this.speed*this.speedUpFactor);
         }  
     }
 
@@ -329,34 +330,40 @@ function orientAndPlaceCars(lanesPerRoad) {
     even_or_odd = Math.floor(Math.random() * 2); // If 0, odd lanes will have + direction and faster speed. Vice versa. 
     if (even_or_odd == 0) {
         var rotation = Math.PI/2;
-        // TODO: ADD OPTION FOR RANDOMIZED SPEEDS IN EVEN/ODD LANES
     }
     else {
         var rotation = -Math.PI/2;
     }
 
-    var seen = {}; // A cache to eliminate the possibility that two cars are placed in the exact same position
+//    var seen = {}; // A cache to eliminate the possibility that two cars are placed in the exact same position
     for (var i = 0; i < cars.length; i+=1) {
         curr_car = cars[i];
         curr_car_lane = (curr_car.mesh.position.x - (480*Math.floor(i/carsPerRoad)))/120;
-        if (! ((curr_car_lane).toString() in seen)) {
-            seen[(curr_car_lane).toString()] = [];
-        }
+//        if (! ((curr_car_lane).toString() in seen)) {
+//            seen[(curr_car_lane).toString()] = [];
+//        }
 
         if (curr_car_lane%2==1) {
             curr_car.mesh.rotation.y = rotation;
+            if (even_or_odd == 0) {
+                curr_car.speedUpFactor = 1.5;
+            }
 
         }
         if (curr_car_lane%2==0) {
             curr_car.mesh.rotation.y = -rotation;
+            if (even_or_odd == 1) {
+                curr_car.speedUpFactor = 1.5;
+            }
         }
 
-        shift = Math.max(1, Math.floor(Math.random() * 4))*200;
-        lst = seen[(curr_car_lane).toString()];
-        while (lst.indexOf(shift) > -1) { // Checking that there is no car already at this position
-            shift = Math.max(1, Math.floor(Math.random() * 4))*200;
-        }
-        lst.push(shift);
+//        shift = Math.max(1, Math.floor(Math.random() * 4))*200;
+        shift = Math.floor(Math.random() * carsPerRoad) * 200;
+//        lst = seen[(curr_car_lane).toString()];
+//        while (lst.indexOf(shift) > -1) { // Checking that there is no car already at this position
+//            shift = Math.max(1, Math.floor(Math.random() * 4))*200;
+//        }
+//        lst.push(shift);
 
         if (curr_car.mesh.rotation.y > 0) {
             curr_car.mesh.position.z = 300 + shift;
@@ -424,11 +431,14 @@ function createGround() {
 function loop(){
 
     var direction = new THREE.Vector3(0, 0, 1);
+
     for (var i = 0; i<cars.length;i+=1) {
         cars[i].update(direction);
 
         currRoadNumber = Math.floor(i/carsPerRoad);
-        if (Math.abs(cars[i].mesh.position.z) > 900 + (currRoadNumber*100)) {
+        var checkDirection = cars[i].mesh.rotation.y / Math.abs(cars[i].mesh.rotation.y);
+        // currRoadNumber * 200 adjusts for increasing pixel size of roads as you get farther from the origin
+        if ((Math.abs(cars[i].mesh.position.z) > 800 + (currRoadNumber*200)) && checkDirection == -cars[i].mesh.position.z/Math.abs(cars[i].mesh.position.z)) {
             cars[i].mesh.position.z = -cars[i].mesh.position.z;
         }
     }
