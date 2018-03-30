@@ -7,8 +7,10 @@
  */
 
 var Colors = {
-    red:0xf25346,
+    red:0xff0000,
+    white:0xffffff,
     roadBlack: 0x112222,
+    orange:0xf47a41,
     black: 0x000000, 
     silver: 0x999999,
     redDark: 0xb00000,
@@ -51,9 +53,10 @@ function init() {
 
     createGround();
     createCar(9, 3);
-
+    createChicken();
     // start a loop that will update the objects' positions
     // and render the scene on each frame
+    createControls();
     loop();
 }
 
@@ -97,11 +100,18 @@ function createScene() {
         );
 
     // Set the position of the camera
-    camera.position.x = 0;
-    camera.position.z = 0;
+    
+    camera.position.x = -150;
+    camera.position.z = 150;
     camera.position.y = 500;
-    camera.lookAt(150, 0, 0);
-
+    camera.lookAt(150, 0, 125);
+    /*
+    camera.position.x = -50;
+    camera.position.z = 100;
+    camera.position.y = 30;
+    
+    camera.lookAt(0, 30, 0);
+    */
     // Create the renderer
     renderer = new THREE.WebGLRenderer({
         // Allow transparency to show the gradient background
@@ -227,9 +237,51 @@ function createTire(radiusTop, radiusBottom, height, radialSegments, color, x, y
 }
 
 /**
- * Template for Car with "advanced motion" (i.e., acceleration and deceleration,
- * rotation speed as a function of speed)
+ * Template objects
  */
+ function Chicken() {
+
+    this.mesh = new THREE.Object3D();
+
+    var head = createBox(20, 40, 30, Colors.white, 0, 40, 0);
+    var beak = createBox(6, 6, 10, Colors.orange, 0, 50, 20);
+    var gobble = createBox(6, 8, 6, Colors.red, 0, 43, 18.5);
+    var hat = createBox(9, 6, 12.5, Colors.red, 0, 63, 0);
+    var rightEye = createBox(4, 4, 4, Colors.black, -9, 50, 5);
+    var leftEye = createBox(4, 4, 4, Colors.black, 9, 50, 5);
+    var rightWing = createBox(10, 10, 30, Colors.white, -13, 30, -5);
+    var leftWing = createBox(10, 10, 30, Colors.white, 13, 30, -5);
+
+    var rightLeg = createBox(5, 28, 5, Colors.orange, -7, 15, -5);
+    var leftLeg = createBox(5, 28, 5, Colors.orange, 7, 15, -5);
+    var rightFoot = createBox(10, 2, 10, Colors.orange, -7, 0, -5);
+    var leftFoot = createBox(10, 2, 10, Colors.orange, 7, 0, -5);
+
+    var tail = createBox(20, 20, 10, Colors.white, 0, 30, -21);
+    var tailEnd = createBox(10, 10, 5, Colors.white, 0, 30, -29);
+
+    this.mesh.add(head);
+    this.mesh.add(beak);
+    this.mesh.add(gobble);
+    this.mesh.add(rightEye);
+    this.mesh.add(leftEye);
+    this.mesh.add(hat);
+    this.mesh.add(rightWing);
+    this.mesh.add(leftWing);
+    this.mesh.add(rightLeg);
+    this.mesh.add(leftLeg);
+    this.mesh.add(rightFoot);
+    this.mesh.add(leftFoot);
+    this.mesh.add(tail);
+    this.mesh.add(tailEnd);
+
+    this.update = function(direction) {
+        this.mesh.position.addScaledVector(direction, 120);
+    }
+
+    this.mesh.rotation.y = -Math.PI/2;
+}
+
 function policeCar() {
 
     this.mesh = new THREE.Object3D();
@@ -281,14 +333,6 @@ function policeCar() {
     this.speed = -6;
     this.speedUpFactor = 1;
 
-    //var headLightLeftLight = new THREE.PointLight( 0xffcc00, 1, 100 );
-    //headLightLeftLight.position.set( 60, 5, 15 );
-    //this.mesh.add( headLightLeftLight );
-
-    //var headLightRightLight = new THREE.PointLight( 0xffcc00, 1, 100 );
-    //headLightRightLight.position.set( 50, 5, -15 );
-    //this.mesh.add( headLightRightLight );
-
     function computeR(radians) {
         var M = new THREE.Matrix3();
         M.set(Math.cos(radians), 0, -Math.sin(radians),
@@ -305,19 +349,6 @@ function policeCar() {
             this.mesh.position.addScaledVector(direction, -this.speed*this.speedUpFactor);
         }  
     }
-
-    this.moveForward = function() { movement.forward = true; }
-    this.stopForward = function() { movement.forward = false; }
-
-    this.turnLeft = function() { movement.left = true; }
-    this.stopLeft = function() { movement.left = false; }
-
-    this.turnRight = function() { movement.right = true; }
-    this.stopRight = function() { movement.right = false; }
-
-    this.moveBackward = function() { movement.backward = true; }
-    this.stopBackward = function() { movement.backward = false; }
-
     this.collidable = body;
 }
 
@@ -398,6 +429,11 @@ function createCar(numCars, lanesPerRoad) {
     }
 }
 
+function createChicken() {
+    chicken = new Chicken();
+    scene.add(chicken.mesh);
+}
+
 
 function createGround() {
     ground = createBox( 250, 20, 3500, Colors.greenDark, -65, -10, -50 );
@@ -451,4 +487,57 @@ function loop(){
 
 
 // init();  // uncomment for JSFiddle, wraps code in onLoad eventListener
+var left = 37;
+var right = 39;
+var up = 38;
+var down = 40;
+
+function createControls() {
+    var newLeft = new THREE.Vector3(0, 0, -1);
+    var newRight = new THREE.Vector3(0, 0, 1);
+    var newForward = new THREE.Vector3(1, 0, 0);
+    var newBackward = new THREE.Vector3(-1, 0, 0);
+    var stationary = new THREE.Vector3(0, 0, 0);
+
+    document.addEventListener(
+        'keydown',
+        function( ev ) {
+            key = ev.keyCode;
+
+            if (key == left) {
+                chicken.update(newLeft);
+                console.log('it worked!');
+            }
+            if (key == right) {
+                chicken.update(newRight);
+            }
+            if (key == up) {
+                chicken.update(newForward);
+            }
+            if (key == down) {
+                chicken.update(newBackward);
+            }
+        }
+    );
+
+    document.addEventListener(
+        'keyup',
+        function( ev ) {
+            key = ev.keyCode;
+
+            if (key == left) {
+                chicken.update(stationary);
+            }
+            if (key == right) {
+                chicken.update(stationary);
+            }
+            if (key == up) {
+                chicken.update(stationary);
+            }
+            if (key == down) {
+                chicken.update(stationary);
+            }
+        }
+    );
+}
 window.addEventListener('load', init, false);
