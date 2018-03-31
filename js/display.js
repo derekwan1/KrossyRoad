@@ -275,11 +275,29 @@ function createTire(radiusTop, radiusBottom, height, radialSegments, color, x, y
     this.mesh.add(tail);
     this.mesh.add(tailEnd);
 
+    this.mesh.rotation.y = -Math.PI/2;
+
+    this.orient = function(direction) {
+        if (direction.z < 0) {
+            this.mesh.rotation.y = Math.PI;
+        }
+        if (direction.z > 0) {
+            this.mesh.rotation.y = 0;
+        }
+        if (direction.x > 0) {
+            this.mesh.rotation.y = Math.PI/2;
+        }
+        if (direction.x < 0) {
+            this.mesh.rotation.y = -Math.PI/2;
+        }
+    }
+
     this.update = function(direction) {
+        this.orient(direction);
         this.mesh.position.addScaledVector(direction, 120);
     }
 
-    this.mesh.rotation.y = -Math.PI/2;
+
 }
 
 function policeCar() {
@@ -366,13 +384,9 @@ function orientAndPlaceCars(lanesPerRoad) {
         var rotation = -Math.PI/2;
     }
 
-//    var seen = {}; // A cache to eliminate the possibility that two cars are placed in the exact same position
     for (var i = 0; i < cars.length; i+=1) {
         curr_car = cars[i];
         curr_car_lane = (curr_car.mesh.position.x - (480*Math.floor(i/carsPerRoad)))/120;
-//        if (! ((curr_car_lane).toString() in seen)) {
-//            seen[(curr_car_lane).toString()] = [];
-//        }
 
         if (curr_car_lane%2==1) {
             curr_car.mesh.rotation.y = rotation;
@@ -388,13 +402,7 @@ function orientAndPlaceCars(lanesPerRoad) {
             }
         }
 
-//        shift = Math.max(1, Math.floor(Math.random() * 4))*200;
         shift = Math.floor(Math.random() * carsPerRoad) * 200;
-//        lst = seen[(curr_car_lane).toString()];
-//        while (lst.indexOf(shift) > -1) { // Checking that there is no car already at this position
-//            shift = Math.max(1, Math.floor(Math.random() * 4))*200;
-//        }
-//        lst.push(shift);
 
         if (curr_car.mesh.rotation.y > 0) {
             curr_car.mesh.position.z = 300 + shift;
@@ -464,9 +472,38 @@ function createGround() {
     //scene.add(road4);
 }
 
+function checkCollisions() {
+    chicken_z = chicken.mesh.position.z
+    chicken_x = chicken.mesh.position.x;
+    for (var i = 0; i<cars.length;i+=1) {
+        car_z = cars[i].mesh.position.z;
+        car_x = cars[i].mesh.position.x;
+        if ((chicken_z >= car_z - 50) && (chicken_z <= car_z+50) && (car_x == chicken_x)) {
+            console.log('collision!');
+        }
+    }
+}
+var movingLeft = false;
+var movingRight = false;
+var movingForward = false;
+var movingBackward = false;
+var deltaPos = 0;
+
 function loop(){
 
     var direction = new THREE.Vector3(0, 0, 1);
+    var chickenDirection = new THREE.Vector3(0, 0, 0);
+
+    if (movingLeft == true ) {
+        var chickenDirection = new THREE.Vector3(0, 0, -0.2);
+        deltaPos += 0.2 * 120;
+    }
+    if (movingRight == true) {
+        var chickenDirection = new THREE.Vector3(0, 0, 0.2);
+        deltaPos += 0.2 * 120;
+    }
+
+    chicken.update(chickenDirection);
 
     for (var i = 0; i<cars.length;i+=1) {
         cars[i].update(direction);
@@ -478,13 +515,13 @@ function loop(){
             cars[i].mesh.position.z = -cars[i].mesh.position.z;
         }
     }
+    checkCollisions();
     // render the scene
     renderer.render(scene, camera);
 
     // call the loop function again
     requestAnimationFrame(loop);
 }
-
 
 // init();  // uncomment for JSFiddle, wraps code in onLoad eventListener
 var left = 37;
@@ -505,11 +542,12 @@ function createControls() {
             key = ev.keyCode;
 
             if (key == left) {
-                chicken.update(newLeft);
-                console.log('it worked!');
+                movingLeft = true;
+                //chicken.update(newLeft);
             }
             if (key == right) {
-                chicken.update(newRight);
+                movingRight = true;
+                //chicken.update(newRight);
             }
             if (key == up) {
                 chicken.update(newForward);
@@ -526,10 +564,12 @@ function createControls() {
             key = ev.keyCode;
 
             if (key == left) {
-                chicken.update(stationary);
+                movingLeft = false;
+                //chicken.update(stationary);
             }
             if (key == right) {
-                chicken.update(stationary);
+                movingRight = false;
+                //chicken.update(stationary);
             }
             if (key == up) {
                 chicken.update(stationary);
