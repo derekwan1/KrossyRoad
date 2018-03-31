@@ -14,10 +14,10 @@ html, body {
 }
 
 #world {
-	position: absolute;
+	position: fixed;
 	width: 90%;
 	height: 100%;
-	right:0;
+	right: -200;
 	overflow: hidden;
 }
 
