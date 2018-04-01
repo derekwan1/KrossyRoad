@@ -58,7 +58,7 @@ function init() {
 
     // add the objects
 
-    createGround();
+    createGround("initial", 0);
 
     createCar(9, 3);
 
@@ -442,34 +442,80 @@ function createChicken() {
     scene.add(chicken.mesh);
 }
 
-
-function createGround() {
-    ground = createBox( 250, 20, 3500, Colors.greenDark, -65, -10, -50 );
-    road = createBox(360, 10, 3500, Colors.roadBlack, 240, -10, 0);
-    ground2 = createBox(120, 20, 3500, Colors.greenDark, 480, -10, -150);
-    road2 = createBox(360, 10, 3700, Colors.roadBlack, 720, -10, -150);
-    ground3 = createBox(120, 20, 4000, Colors.greenDark, 960, -10, -150);
-    //road3 = createBox(360, 10, 4200, Colors.roadBlack, 1200, -10, -200);
-    //ground4 = createBox(120, 20, 4400, Colors.greenDark, 1440, -10, -200);
-    //road4 = createBox(360, 10, 4600, Colors.roadBlack, 1680, -10, -200);
-    for (var i = 0; i<4; i+=1) {
-        for (var markerZPos = -1900; markerZPos < 1900; markerZPos+=230) {
-            marker = createBox(10, 5, 100, Colors.white, 160 + (i*480), -7, markerZPos);
-            scene.add(marker);
-        }
-        for (var markerZPos = -1900; markerZPos < 1900; markerZPos+=230) {
-            marker = createBox(10, 5, 100, Colors.white, 300 + (i*480), -7, markerZPos);
-            scene.add(marker);
+function addLaneMarkers(numLanes, initial = false) {
+    if (initial == true) {
+        for (var i = 0; i<3; i+=1) {
+           for (var markerZPos = -1900; markerZPos < 1900; markerZPos+=230) {
+                marker = createBox(10, 5, 100, Colors.white, 160 + (i*480), -7, markerZPos);
+                scene.add(marker);
+            }
+            for (var markerZPos = -1900; markerZPos < 1900; markerZPos+=230) {
+                marker = createBox(10, 5, 100, Colors.white, 300 + (i*480), -7, markerZPos);
+                 scene.add(marker);
+            }
         }
     }
+
+    else {
+        for (var laneNumber = 0; i<numLanes; i+=1) {
+            for (var MarkerZPos = -1900; markerZPos < 1900; markerZPos += 230) {
+                marker = createBox(10, 5, 100, Colors.white, 160 + (i*480), -7, markerZPos);
+                scene.add(marker);
+            }
+        }
+    }
+}
+
+var currRoadLanes = 0;
+
+function createGround(pixelsToReplace, farthestPixelDisplaying) {
+    if (pixelsToReplace == "initial") {
+        ground = createBox( 250, 20, 3500, Colors.greenDark, -65, -10, -50 );
+        road = createBox(360, 10, 3500, Colors.roadBlack, 240, -10, 0);
+        ground2 = createBox(120, 20, 3500, Colors.greenDark, 480, -10, -150);
+        road2 = createBox(360, 10, 3700, Colors.roadBlack, 720, -10, -150);
+        ground3 = createBox(120, 20, 3500, Colors.greenDark, 960, -10, -150);
+        road3 = createBox(360, 10, 3700, Colors.roadBlack, 1200, -10, -150);
+        ground4 = createBox(120, 20, 3500, Colors.greenDark, 1440, -10, -150);
+        addLaneMarkers(3, true);
+    }
+
+    else {
+        road_or_ground = Math.floor(Math.random() * 6);
+        if (road_or_ground == 5 || currRoadLanes == 5) {
+            isGround = true;
+            isRoad = false;
+        }
+        else {
+            isGround = false;
+            isRoad = true;
+            currRoadLanes += 1;
+        }
+        if (isGround == true) {
+            if (currRoadLanes == 0) {
+                newGround = createBox(120, 20, 3500, Colors.greenDark, farthestPixelDisplaying-60, -10, -150);
+                scene.add(newGround);
+            }
+            else {
+                newRoad = createBox(currRoadLanes*120, 10, 3700, Colors.roadBlack, farthestPixelDisplaying-120-(60*currRoadLanes), -10, -150);
+                scene.add(newRoad);
+                newGround = createBox(120, 20, 3500, Colors.greenDark, farthestPixelDisplaying-60, -10, -150);
+                scene.add(newGround);
+                //addLaneMarkers(currRoadLanes, false);
+                currRoadLanes = 0;
+            }
+        }
+    }
+
+
+
     scene.add(ground);
     scene.add(road);
     scene.add(ground2);
     scene.add(road2);
     scene.add(ground3);
-    //scene.add(road3);
-    //scene.add(ground4);
-    //scene.add(road4);
+    scene.add(road3);
+    scene.add(ground4);
 }
 
 function checkCollisions() {
@@ -499,12 +545,19 @@ var movingLeft = false;
 var movingRight = false;
 var movingForward = false;
 var movingBackward = false;
+var initialCameraPosition = -150;
+var farthestPixel = 1500;
 
 function loop(){
 
-    var chickenInitialPosition = chicken.mesh.position.x;
     var direction = new THREE.Vector3(0, 0, 1);
     var chickenDirection = new THREE.Vector3(0, 0, 0);
+
+    if (camera.position.x == initialCameraPosition + 120) {
+        createGround(120, farthestPixel+120);
+        initialCameraPosition = camera.position.x;
+        farthestPixel += 120;
+    }
 
     // Update the chicken's position if the user is pressing keys
     if (movingLeft == true ) {
@@ -535,8 +588,9 @@ function loop(){
     score = chicken.mesh.position.x / 120;
     document.getElementById("time").innerHTML = score;
     document.getElementById("displayedHighScore").innerHTML = highscore;
+
     // Move the camera forward
-    //camera.position.x += 1.3;
+    camera.position.x += 1.5;
 
     // render the scene
     renderer.render(scene, camera);
