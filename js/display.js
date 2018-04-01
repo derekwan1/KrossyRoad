@@ -40,6 +40,7 @@ var doorColor = Colors.brown;
 var handleColor = Colors.brownDark;
 var cars = [];
 var carsPerRoad = 9;
+var score = 0;
 /********** End step 1 **********/
 
 function init() {
@@ -297,7 +298,6 @@ function createTire(radiusTop, radiusBottom, height, radialSegments, color, x, y
         this.mesh.position.addScaledVector(direction, 120);
     }
 
-
 }
 
 function policeCar() {
@@ -487,7 +487,6 @@ var movingLeft = false;
 var movingRight = false;
 var movingForward = false;
 var movingBackward = false;
-var deltaPos = 0;
 
 function loop(){
 
@@ -496,11 +495,9 @@ function loop(){
 
     if (movingLeft == true ) {
         var chickenDirection = new THREE.Vector3(0, 0, -0.2);
-        deltaPos += 0.2 * 120;
     }
     if (movingRight == true) {
         var chickenDirection = new THREE.Vector3(0, 0, 0.2);
-        deltaPos += 0.2 * 120;
     }
 
     chicken.update(chickenDirection);
@@ -516,6 +513,8 @@ function loop(){
         }
     }
     checkCollisions();
+    score = chicken.mesh.position.x / 120;
+    document.getElementById("time").innerHTML = score;
     // render the scene
     renderer.render(scene, camera);
 
