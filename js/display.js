@@ -39,9 +39,9 @@ var grateColor = Colors.brownDark;
 var doorColor = Colors.brown;
 var handleColor = Colors.brownDark;
 var cars = [];
-var carsPerRoad = 9;
 var score = 0;
 var highscore = localStorage.getItem("highscore");
+var firstLanes = [];
 
 if (highscore == null) {
     highscore = 0;
@@ -59,8 +59,6 @@ function init() {
     // add the objects
 
     createGround("initial", 0);
-
-    createCar(9, 3);
 
     createChicken();
 
@@ -375,7 +373,7 @@ function firstLane(currRoadNumber, lanesPerRoad) {
     return (Math.floor(currRoadNumber/lanesPerRoad) * 480) + 120;
 }
 
-function orientAndPlaceCars(lanesPerRoad) {
+function orientAndPlaceCars(carsPerRoad, firstLane) {
     even_or_odd = Math.floor(Math.random() * 2); // If 0, odd lanes will have + direction and faster speed. Vice versa. 
     if (even_or_odd == 0) {
         var rotation = Math.PI/2;
@@ -384,9 +382,9 @@ function orientAndPlaceCars(lanesPerRoad) {
         var rotation = -Math.PI/2;
     }
 
-    for (var i = 0; i < cars.length; i+=1) {
+    for (var i = cars.length-carsPerRoad; i < cars.length; i+=1) {
         curr_car = cars[i];
-        curr_car_lane = (curr_car.mesh.position.x - (480*Math.floor(i/carsPerRoad)))/120;
+        curr_car_lane = (curr_car.mesh.position.x - firstLane)/120;
 
         if (curr_car_lane%2==1) {
             curr_car.mesh.rotation.y = rotation;
@@ -413,26 +411,46 @@ function orientAndPlaceCars(lanesPerRoad) {
     }
 }
 
-
-function createCar(numCars, lanesPerRoad) {
+/*
+function createCar(numCars, lanesPerRoad, carsPerRoad) {
     for (var i = 0; i < numCars; i+=1) {
         car = new policeCar();
         var currRoadNumber = Math.floor(i/carsPerRoad);
-        var firstLaneOfThisRoad = firstLane(currRoadNumber, lanesPerRoad);
-
+        var firstLaneOfThisRoad = firstLanes[currRoadNumber];
         car.mesh.position.y = 18;
 
         if (i >= lanesPerRoad) { // Generalized for any number of roads  
-            car.mesh.position.x = firstLaneOfThisRoad + ((i%3)*120);
+            car.mesh.position.x = firstLaneOfThisRoad + ((i%lanesPerRoad)*120);
         } 
         else {
             car.mesh.position.x = firstLaneOfThisRoad + 120*i;  
         }
         cars.push(car);
     }
-    orientAndPlaceCars(lanesPerRoad);
+    orientAndPlaceCars(carsPerRoad);
 
-    for (var i = 0; i < cars.length; i+=1) {
+    for (var i = cars.length-numCars; i < cars.length; i+=1) {
+        scene.add(cars[i].mesh);
+    }
+}
+*/
+function createCar(numCars, lanesPerRoad, currRoadNumber) {
+    for (var i = 0; i < numCars; i+=1) {
+        car = new policeCar();
+        var firstLaneOfThisRoad = firstLanes[currRoadNumber];
+        car.mesh.position.y = 18;
+
+        if (i >= lanesPerRoad) { // Generalized for any number of roads  
+            car.mesh.position.x = firstLaneOfThisRoad + ((i%lanesPerRoad)*120);
+        } 
+        else {
+            car.mesh.position.x = firstLaneOfThisRoad + 120*i;  
+        }
+        cars.push(car);
+    }
+    orientAndPlaceCars(3*lanesPerRoad, firstLaneOfThisRoad);
+
+    for (var i = cars.length-numCars; i < cars.length; i+=1) {
         scene.add(cars[i].mesh);
     }
 }
@@ -471,12 +489,18 @@ function createGround(pixelsToReplace, farthestPixelDisplaying) {
     if (pixelsToReplace == "initial") {
         ground = createBox( 250, 20, 3500, Colors.greenDark, -65, -10, -50 );
         road = createBox(360, 10, 3500, Colors.roadBlack, 240, -10, 0);
+        firstLanes.push(120);
         ground2 = createBox(120, 20, 3500, Colors.greenDark, 480, -10, -150);
         road2 = createBox(360, 10, 3700, Colors.roadBlack, 720, -10, -150);
+        firstLanes.push(600);
         ground3 = createBox(120, 20, 3500, Colors.greenDark, 960, -10, -150);
         road3 = createBox(360, 10, 3700, Colors.roadBlack, 1200, -10, -150);
+        firstLanes.push(1080);
         ground4 = createBox(120, 20, 3500, Colors.greenDark, 1440, -10, -150);
         addLaneMarkers(3, 1500, true);
+        createCar(9, 3, 0);
+        createCar(9, 3, 1);
+        createCar(9, 3, 2);
     }
 
     else {
@@ -501,12 +525,12 @@ function createGround(pixelsToReplace, farthestPixelDisplaying) {
                 newGround = createBox(120, 20, 3500, Colors.greenDark, farthestPixelDisplaying-60, -10, -150);
                 scene.add(newGround);
                 addLaneMarkers(currRoadLanes, farthestPixelDisplaying, false);
+                firstLanes.push(farthestPixelDisplaying-(120*currRoadLanes)-60);
+                createCar(3*currRoadLanes, currRoadLanes, firstLanes.length-1);
                 currRoadLanes = 0;
             }
         }
     }
-
-
 
     scene.add(ground);
     scene.add(road);
@@ -530,9 +554,6 @@ function checkCollisions() {
 }
 
 function gameOver(){
-    if (score > highscore) {
-        localStorage.setItem("highscore", score);      
-    }
     alert("Mr. Chicken has been run over! Try again!");
     document.location.reload(true);
     chicken.reload(forcedReload);
@@ -547,7 +568,6 @@ var initialCameraPosition = -150;
 var farthestPixel = 1500;
 
 function loop(){
-
     var direction = new THREE.Vector3(0, 0, 1);
     var chickenDirection = new THREE.Vector3(0, 0, 0);
 
@@ -571,10 +591,9 @@ function loop(){
     for (var i = 0; i<cars.length;i+=1) {
         cars[i].update(direction);
 
-        currRoadNumber = Math.floor(i/carsPerRoad);
         var checkDirection = cars[i].mesh.rotation.y / Math.abs(cars[i].mesh.rotation.y);
-        // currRoadNumber * 200 adjusts for increasing pixel size of roads as you get farther from the origin
-        if ((Math.abs(cars[i].mesh.position.z) > 800 + (currRoadNumber*200)) && checkDirection == -cars[i].mesh.position.z/Math.abs(cars[i].mesh.position.z)) {
+
+        if (Math.abs(cars[i].mesh.position.z) > 900 && checkDirection == -cars[i].mesh.position.z/Math.abs(cars[i].mesh.position.z)) {
             cars[i].mesh.position.z = -cars[i].mesh.position.z;
         }
     }
@@ -585,7 +604,14 @@ function loop(){
     // Update score
     score = chicken.mesh.position.x / 120;
     document.getElementById("time").innerHTML = score;
-    document.getElementById("displayedHighScore").innerHTML = highscore;
+    if (score > highscore) {
+        localStorage.setItem("highscore", score);  
+        document.getElementById("displayedHighScore").innerHTML = score;    
+    }
+    else {
+        document.getElementById("displayedHighScore").innerHTML = highscore;    
+    }
+
 
     // Move the camera forward
     camera.position.x += 1.5;
