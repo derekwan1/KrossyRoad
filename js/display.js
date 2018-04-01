@@ -41,6 +41,12 @@ var handleColor = Colors.brownDark;
 var cars = [];
 var carsPerRoad = 9;
 var score = 0;
+var highscore = localStorage.getItem("highscore");
+
+if (highscore == null) {
+    highscore = 0;
+}
+
 /********** End step 1 **********/
 
 function init() {
@@ -53,11 +59,15 @@ function init() {
     // add the objects
 
     createGround();
+
     createCar(9, 3);
+
     createChicken();
+
+    createControls();
     // start a loop that will update the objects' positions
     // and render the scene on each frame
-    createControls();
+
     loop();
 }
 
@@ -475,9 +485,12 @@ function checkCollisions() {
 }
 
 function gameOver(){
-    //alert("Mr. Chicken has been run over! Try again!");
-    //document.location.reload(true);
-    //chicken.reload(forcedReload);
+    if (score > highscore) {
+        localStorage.setItem("highscore", score);      
+    }
+    alert("Mr. Chicken has been run over! Try again!");
+    document.location.reload(true);
+    chicken.reload(forcedReload);
 }
 
 
@@ -521,9 +534,9 @@ function loop(){
     // Update score
     score = chicken.mesh.position.x / 120;
     document.getElementById("time").innerHTML = score;
-
+    document.getElementById("displayedHighScore").innerHTML = highscore;
     // Move the camera forward
-    camera.position.x += 1.3;
+    //camera.position.x += 1.3;
 
     // render the scene
     renderer.render(scene, camera);
