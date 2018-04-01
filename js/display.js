@@ -297,7 +297,6 @@ function createTire(radiusTop, radiusBottom, height, radialSegments, color, x, y
         this.orient(direction);
         this.mesh.position.addScaledVector(direction, 120);
     }
-
 }
 
 function policeCar() {
@@ -351,14 +350,6 @@ function policeCar() {
     this.speed = -6;
     this.speedUpFactor = 1;
 
-    function computeR(radians) {
-        var M = new THREE.Matrix3();
-        M.set(Math.cos(radians), 0, -Math.sin(radians),
-              0,                 1,                  0,
-              Math.sin(radians), 0,  Math.cos(radians));
-        return M;
-    }
-
     this.update = function(direction) {
         if (this.mesh.rotation.y > 0) {
             this.mesh.position.addScaledVector(direction, this.speed*this.speedUpFactor);
@@ -367,7 +358,6 @@ function policeCar() {
             this.mesh.position.addScaledVector(direction, -this.speed*this.speedUpFactor);
         }  
     }
-    this.collidable = body;
 }
 
 function firstLane(currRoadNumber, lanesPerRoad) {
@@ -479,10 +469,19 @@ function checkCollisions() {
         car_z = cars[i].mesh.position.z;
         car_x = cars[i].mesh.position.x;
         if ((chicken_z >= car_z - 50) && (chicken_z <= car_z+50) && (car_x == chicken_x)) {
-            console.log('collision!');
+            gameOver();
         }
     }
 }
+
+function gameOver(){
+    //alert("Mr. Chicken has been run over! Try again!");
+    //document.location.reload(true);
+    //chicken.reload(forcedReload);
+}
+
+
+
 var movingLeft = false;
 var movingRight = false;
 var movingForward = false;
@@ -490,9 +489,11 @@ var movingBackward = false;
 
 function loop(){
 
+    var chickenInitialPosition = chicken.mesh.position.x;
     var direction = new THREE.Vector3(0, 0, 1);
     var chickenDirection = new THREE.Vector3(0, 0, 0);
 
+    // Update the chicken's position if the user is pressing keys
     if (movingLeft == true ) {
         var chickenDirection = new THREE.Vector3(0, 0, -0.2);
     }
@@ -502,6 +503,7 @@ function loop(){
 
     chicken.update(chickenDirection);
 
+    // Update each car's position
     for (var i = 0; i<cars.length;i+=1) {
         cars[i].update(direction);
 
@@ -512,9 +514,17 @@ function loop(){
             cars[i].mesh.position.z = -cars[i].mesh.position.z;
         }
     }
+
+    // Check for collisions with cars
     checkCollisions();
+
+    // Update score
     score = chicken.mesh.position.x / 120;
     document.getElementById("time").innerHTML = score;
+
+    // Move the camera forward
+    camera.position.x += 1.3;
+
     // render the scene
     renderer.render(scene, camera);
 
