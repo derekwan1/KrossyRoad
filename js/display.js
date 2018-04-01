@@ -42,6 +42,7 @@ var cars = [];
 var score = 0;
 var highscore = localStorage.getItem("highscore");
 var firstLanes = [];
+var markers = [];
 
 if (highscore == null) {
     highscore = 0;
@@ -113,14 +114,10 @@ function createScene() {
     camera.position.x = -150;
     camera.position.z = 150;
     camera.position.y = 500;
+    //camera.position.y = 1500;
     camera.lookAt(150, 0, 125);
-    /*
-    camera.position.x = -50;
-    camera.position.z = 100;
-    camera.position.y = 30;
-    
-    camera.lookAt(0, 30, 0);
-    */
+    //camera.lookAt(-1500, 0, 0);
+
     // Create the renderer
     renderer = new THREE.WebGLRenderer({
         // Allow transparency to show the gradient background
@@ -411,32 +408,10 @@ function orientAndPlaceCars(carsPerRoad, firstLane) {
     }
 }
 
-/*
-function createCar(numCars, lanesPerRoad, carsPerRoad) {
-    for (var i = 0; i < numCars; i+=1) {
-        car = new policeCar();
-        var currRoadNumber = Math.floor(i/carsPerRoad);
-        var firstLaneOfThisRoad = firstLanes[currRoadNumber];
-        car.mesh.position.y = 18;
-
-        if (i >= lanesPerRoad) { // Generalized for any number of roads  
-            car.mesh.position.x = firstLaneOfThisRoad + ((i%lanesPerRoad)*120);
-        } 
-        else {
-            car.mesh.position.x = firstLaneOfThisRoad + 120*i;  
-        }
-        cars.push(car);
-    }
-    orientAndPlaceCars(carsPerRoad);
-
-    for (var i = cars.length-numCars; i < cars.length; i+=1) {
-        scene.add(cars[i].mesh);
-    }
-}
-*/
 function createCar(numCars, lanesPerRoad, currRoadNumber) {
     for (var i = 0; i < numCars; i+=1) {
         car = new policeCar();
+        car.name = currRoadNumber;
         var firstLaneOfThisRoad = firstLanes[currRoadNumber];
         car.mesh.position.y = 18;
 
@@ -460,7 +435,7 @@ function createChicken() {
     scene.add(chicken.mesh);
 }
 
-function addLaneMarkers(numLanes, farthestPixel, initial = false) {
+function addLaneMarkers(numLanes, farthestPixel, currRoadNumber, initial = false) {
     if (initial == true) {
         for (var i = 0; i<3; i+=1) {
            for (var markerZPos = -1900; markerZPos < 1900; markerZPos+=230) {
@@ -478,6 +453,8 @@ function addLaneMarkers(numLanes, farthestPixel, initial = false) {
             for (var markerZPos = -1900; markerZPos < 1900; markerZPos += 230) {
                 marker = createBox(10, 5, 100, Colors.white, farthestPixel-240-(laneNumber*120), -7, markerZPos);
                 scene.add(marker);
+                marker.name = currRoadNumber-4;
+                markers.push(marker);
             }
         }
     }
@@ -489,15 +466,26 @@ function createGround(pixelsToReplace, farthestPixelDisplaying) {
     if (pixelsToReplace == "initial") {
         ground = createBox( 250, 20, 3500, Colors.greenDark, -65, -10, -50 );
         road = createBox(360, 10, 3500, Colors.roadBlack, 240, -10, 0);
+        ground.name = 0;
+        road.name = 0;
         firstLanes.push(120);
+
         ground2 = createBox(120, 20, 3500, Colors.greenDark, 480, -10, -150);
         road2 = createBox(360, 10, 3700, Colors.roadBlack, 720, -10, -150);
+        ground2.name = 1;
+        road2.name = 1;
         firstLanes.push(600);
+
         ground3 = createBox(120, 20, 3500, Colors.greenDark, 960, -10, -150);
         road3 = createBox(360, 10, 3700, Colors.roadBlack, 1200, -10, -150);
+        road3.name = 2;
+        ground3.name = 2;
         firstLanes.push(1080);
+
         ground4 = createBox(120, 20, 3500, Colors.greenDark, 1440, -10, -150);
-        addLaneMarkers(3, 1500, true);
+        ground4.name = 3;
+
+        addLaneMarkers(3, 1500, 0, true);
         createCar(9, 3, 0);
         createCar(9, 3, 1);
         createCar(9, 3, 2);
@@ -518,15 +506,22 @@ function createGround(pixelsToReplace, farthestPixelDisplaying) {
             if (currRoadLanes == 0) {
                 newGround = createBox(120, 20, 3500, Colors.greenDark, farthestPixelDisplaying-60, -10, -150);
                 scene.add(newGround);
+                newGround.name = firstLanes.length-1;
             }
             else {
                 newRoad = createBox(currRoadLanes*120, 10, 3700, Colors.roadBlack, farthestPixelDisplaying-120-(60*currRoadLanes), -10, -150);
                 scene.add(newRoad);
                 newGround = createBox(120, 20, 3500, Colors.greenDark, farthestPixelDisplaying-60, -10, -150);
                 scene.add(newGround);
-                addLaneMarkers(currRoadLanes, farthestPixelDisplaying, false);
+
+                addLaneMarkers(currRoadLanes, farthestPixelDisplaying, firstLanes.length-1, false);
+
                 firstLanes.push(farthestPixelDisplaying-(120*currRoadLanes)-60);
                 createCar(3*currRoadLanes, currRoadLanes, firstLanes.length-1);
+
+                newRoad.name = firstLanes.length-1;
+                newGround.name = firstLanes.length;
+                removePassedItems();
                 currRoadLanes = 0;
             }
         }
@@ -539,6 +534,28 @@ function createGround(pixelsToReplace, farthestPixelDisplaying) {
     scene.add(ground3);
     scene.add(road3);
     scene.add(ground4);
+}
+
+function removePassedItems() {
+    for (var i = 0; i<scene.children.length;i+=1) {
+        curr_item = scene.children[i];
+        if (scene.children[i].name == firstLanes.length-5 && typeof(scene.children[i].name) == 'number') {
+            scene.remove(scene.children[i]);
+            i -= 1;
+        }
+    }
+    for (var i = cars.length-1; i>=0; i-=1) {
+        if (cars[i].name == firstLanes.length-5 && typeof(cars[i].name) == 'number') {
+            scene.remove(cars[i].mesh);
+            cars.splice(i, 1);
+        } 
+    }
+    for (var i = markers.length-1; i>=0; i-=1) {
+        if (markers[i].name == firstLanes.length-5 && typeof(markers[i].name) == 'number') {
+            scene.remove(markers[i]);
+            markers.splice(i, 1);
+        } 
+    }
 }
 
 function checkCollisions() {
@@ -568,6 +585,7 @@ var initialCameraPosition = -150;
 var farthestPixel = 1500;
 
 function loop(){
+
     var direction = new THREE.Vector3(0, 0, 1);
     var chickenDirection = new THREE.Vector3(0, 0, 0);
 
