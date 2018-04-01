@@ -442,7 +442,7 @@ function createChicken() {
     scene.add(chicken.mesh);
 }
 
-function addLaneMarkers(numLanes, initial = false) {
+function addLaneMarkers(numLanes, farthestPixel, initial = false) {
     if (initial == true) {
         for (var i = 0; i<3; i+=1) {
            for (var markerZPos = -1900; markerZPos < 1900; markerZPos+=230) {
@@ -455,11 +455,10 @@ function addLaneMarkers(numLanes, initial = false) {
             }
         }
     }
-
-    else {
-        for (var laneNumber = 0; i<numLanes; i+=1) {
-            for (var MarkerZPos = -1900; markerZPos < 1900; markerZPos += 230) {
-                marker = createBox(10, 5, 100, Colors.white, 160 + (i*480), -7, markerZPos);
+    if (numLanes > 1 && initial==false) {
+        for (var laneNumber = 0; laneNumber<numLanes-1; laneNumber+=1) {
+            for (var markerZPos = -1900; markerZPos < 1900; markerZPos += 230) {
+                marker = createBox(10, 5, 100, Colors.white, farthestPixel-240-(laneNumber*120), -7, markerZPos);
                 scene.add(marker);
             }
         }
@@ -477,7 +476,7 @@ function createGround(pixelsToReplace, farthestPixelDisplaying) {
         ground3 = createBox(120, 20, 3500, Colors.greenDark, 960, -10, -150);
         road3 = createBox(360, 10, 3700, Colors.roadBlack, 1200, -10, -150);
         ground4 = createBox(120, 20, 3500, Colors.greenDark, 1440, -10, -150);
-        addLaneMarkers(3, true);
+        addLaneMarkers(3, 1500, true);
     }
 
     else {
@@ -501,7 +500,7 @@ function createGround(pixelsToReplace, farthestPixelDisplaying) {
                 scene.add(newRoad);
                 newGround = createBox(120, 20, 3500, Colors.greenDark, farthestPixelDisplaying-60, -10, -150);
                 scene.add(newGround);
-                //addLaneMarkers(currRoadLanes, false);
+                addLaneMarkers(currRoadLanes, farthestPixelDisplaying, false);
                 currRoadLanes = 0;
             }
         }
@@ -538,7 +537,6 @@ function gameOver(){
     document.location.reload(true);
     chicken.reload(forcedReload);
 }
-
 
 
 var movingLeft = false;
