@@ -390,9 +390,15 @@ function orientAndPlaceCars(carsPerRoad, firstLane) {
         var rotation = -Math.PI/2;
     }
 
+    usedPositions = {};
+
     for (var i = cars.length-carsPerRoad; i < cars.length; i+=1) {
         curr_car = cars[i];
         curr_car_lane = (curr_car.mesh.position.x - firstLane)/120;
+
+        if (! (curr_car_lane in Object.keys(usedPositions))) {
+            usedPositions[String(curr_car_lane)] = [];
+        }        
 
         if (curr_car_lane%2==1) {
             curr_car.mesh.rotation.y = rotation;
@@ -410,11 +416,16 @@ function orientAndPlaceCars(carsPerRoad, firstLane) {
 
         shift = Math.floor(Math.random() * carsPerRoad) * 200;
 
+        while (shift in usedPositions[String(curr_car_lane)]) {
+            shift = Math.floor(Math.random() * carsPerRoad) * 200;
+        }
+        usedPositions[String(curr_car_lane)].push(shift);
+
         if (curr_car.mesh.rotation.y > 0) {
-            curr_car.mesh.position.z = 300 + shift;
+            curr_car.mesh.position.z = 200 + shift;
         }
         if (curr_car.mesh.rotation.y < 0) {
-            curr_car.mesh.position.z = -300 - shift;
+            curr_car.mesh.position.z = -200 - shift;
         }
     }
 }
