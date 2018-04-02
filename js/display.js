@@ -1,3 +1,14 @@
+/*
+TO-DO:
+1. Make sure cars are put in unique positions. There is a problem with 3 cars being put in the same exact position.
+2. Delete markers as the player progresses.
+3. Make speeds and directions unique for each lane, not just even/odd lanes.
+4. Make cars faster as score goes up.
+5. Add trucks, trains, water.
+*/
+
+
+
 /**
  *
  * KROSSY ROAD
@@ -632,7 +643,7 @@ function loop(){
 
 
     // Move the camera forward
-    camera.position.x += 1.5;
+    camera.position.x += 2;
 
     // render the scene
     renderer.render(scene, camera);
