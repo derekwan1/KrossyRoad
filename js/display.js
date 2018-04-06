@@ -124,8 +124,10 @@ function createScene() {
     camera.position.x = -150;
     camera.position.z = 150;
     camera.position.y = 500;
-    //camera.position.y = 1500;
     camera.lookAt(150, 0, 125);
+
+    //Debugging position for removing passed
+    //camera.position.y = 1500;
     //camera.lookAt(-1500, 0, 0);
 
     // Create the renderer
@@ -560,7 +562,7 @@ function createGround(pixelsToReplace, farthestPixelDisplaying) {
 function removePassedItems() {
     for (var i = 0; i<scene.children.length;i+=1) {
         curr_item = scene.children[i];
-        if (scene.children[i].name == firstLanes.length-5 && typeof(scene.children[i].name) == 'number') {
+        if (scene.children[i].name <= firstLanes.length-11 && typeof(scene.children[i].name) == 'number') {
             scene.remove(scene.children[i]);
             i -= 1;
         }
@@ -572,7 +574,7 @@ function removePassedItems() {
         } 
     }
     for (var i = markers.length-1; i>=0; i-=1) {
-        if (markers[i].name == firstLanes.length-5 && typeof(markers[i].name) == 'number') {
+        if (markers[i].name <= firstLanes.length-12 && typeof(markers[i].name) == 'number') {
             scene.remove(markers[i]);
             markers.splice(i, 1);
         } 
