@@ -1,10 +1,9 @@
 /*
 TO-DO:
-1. Make sure cars are put in unique positions. There is a problem with 3 cars being put in the same exact position.
-2. Delete markers as the player progresses.
-3. Make speeds and directions unique for each lane, not just even/odd lanes.
-4. Make cars faster as score goes up.
-5. Add trucks, trains, water.
+1. Delete markers as the player progresses.
+2. Make speeds and directions unique for each lane, not just even/odd lanes.
+3. Make cars faster as score goes up.
+4. Add trucks, trains, water.
 */
 
 
@@ -605,6 +604,7 @@ var movingForward = false;
 var movingBackward = false;
 var initialCameraPosition = -150;
 var farthestPixel = 1500;
+var moveCamera = false;
 
 function loop(){
 
@@ -654,7 +654,9 @@ function loop(){
 
 
     // Move the camera forward
-    camera.position.x += 2;
+    if (moveCamera) {
+        camera.position.x += 2;
+    }
 
     // render the scene
     renderer.render(scene, camera);
@@ -713,6 +715,7 @@ function createControls() {
             }
             if (key == up) {
                 chicken.update(stationary);
+                moveCamera = true;
             }
             if (key == down) {
                 chicken.update(stationary);
