@@ -1,9 +1,7 @@
 /*
 TO-DO:
-1. Delete markers as the player progresses.
-2. Make speeds and directions unique for each lane, not just even/odd lanes.
-3. Make cars faster as score goes up.
-4. Add trucks, trains, water.
+1. Make cars faster as score goes up.
+2. Add trucks, trains, water.
 */
 
 
@@ -366,6 +364,7 @@ function policeCar() {
 
     this.speed = -6;
     this.speedUpFactor = 1;
+    this.bodySize = 100;
 
     this.update = function(direction) {
         if (this.mesh.rotation.y > 0) {
@@ -383,13 +382,6 @@ function firstLane(currRoadNumber, lanesPerRoad) {
 }
 
 function orientAndPlaceCars(carsPerRoad, firstLane) {
-    even_or_odd = Math.floor(Math.random() * 2); // If 0, odd lanes will have + direction and faster speed. Vice versa. 
-    if (even_or_odd == 0) {
-        var rotation = Math.PI/2;
-    }
-    else {
-        var rotation = -Math.PI/2;
-    }
 
     usedPositions = {};
 
@@ -399,21 +391,26 @@ function orientAndPlaceCars(carsPerRoad, firstLane) {
 
         if (! (curr_car_lane in Object.keys(usedPositions))) {
             usedPositions[String(curr_car_lane)] = [];
+
+            // Add information about which orientation each car should have in that lane
+            left_or_right = Math.floor(Math.random() * 2);
+            if (left_or_right == 0) {
+                var rotation = Math.PI/2;
+            }
+            else {
+                var rotation = -Math.PI/2;
+            }
+
+            // Add information about whether to speed up the car
+            isSpedUp = Math.floor(Math.random() * 8);
+            speedFactor = 1 + 0.1*isSpedUp;
+
+            usedPositions[String(curr_car_lane)].push(rotation);
+            usedPositions[String(curr_car_lane)].push(speedFactor);
         }        
 
-        if (curr_car_lane%2==1) {
-            curr_car.mesh.rotation.y = rotation;
-            if (even_or_odd == 0) {
-                curr_car.speedUpFactor = 1.5;
-            }
-
-        }
-        if (curr_car_lane%2==0) {
-            curr_car.mesh.rotation.y = -rotation;
-            if (even_or_odd == 1) {
-                curr_car.speedUpFactor = 1.5;
-            }
-        }
+        curr_car.mesh.rotation.y = usedPositions[String(curr_car_lane)][0]
+        curr_car.speedUpFactor = usedPositions[String(curr_car_lane)][1]
 
         shift = Math.floor(Math.random() * carsPerRoad) * 200;
 
@@ -446,6 +443,8 @@ function createCar(numCars, lanesPerRoad, currRoadNumber) {
         }
         cars.push(car);
     }
+
+    // HARDCODED 3 CARS PER LANE HERE AS WELL!!!!!
     orientAndPlaceCars(3*lanesPerRoad, firstLaneOfThisRoad);
 
     for (var i = cars.length-numCars; i < cars.length; i+=1) {
@@ -540,6 +539,8 @@ function createGround(pixelsToReplace, farthestPixelDisplaying) {
                 addLaneMarkers(currRoadLanes, farthestPixelDisplaying, firstLanes.length-1, false);
 
                 firstLanes.push(farthestPixelDisplaying-(120*currRoadLanes)-60);
+
+                // HARDCODED 3 CARS PER LANE HERE!!!!!
                 createCar(3*currRoadLanes, currRoadLanes, firstLanes.length-1);
 
                 newRoad.name = firstLanes.length-1;
@@ -587,7 +588,7 @@ function checkCollisions() {
     for (var i = 0; i<cars.length;i+=1) {
         car_z = cars[i].mesh.position.z;
         car_x = cars[i].mesh.position.x;
-        if ((chicken_z >= car_z - 50) && (chicken_z <= car_z+50) && (car_x == chicken_x)) {
+        if ((chicken_z >= car_z - cars[i].bodySize/2) && (chicken_z <= car_z + cars[i].bodySize/2) && (car_x == chicken_x)) {
             gameOver();
         }
     }
@@ -613,6 +614,7 @@ function loop(){
     var direction = new THREE.Vector3(0, 0, 1);
     var chickenDirection = new THREE.Vector3(0, 0, 0);
 
+    // check to see whether we need to generate new ground
     if (camera.position.x == initialCameraPosition + 120) {
         createGround(120, farthestPixel+120);
         initialCameraPosition = camera.position.x;
@@ -654,10 +656,9 @@ function loop(){
         document.getElementById("displayedHighScore").innerHTML = highscore;    
     }
 
-
     // Move the camera forward
     if (moveCamera) {
-        camera.position.x += 2;
+        camera.position.x += 2.5;
     }
 
     // render the scene
@@ -687,11 +688,9 @@ function createControls() {
 
             if (key == left) {
                 movingLeft = true;
-                //chicken.update(newLeft);
             }
             if (key == right) {
                 movingRight = true;
-                //chicken.update(newRight);
             }
             if (key == up) {
                 chicken.update(newForward);
@@ -709,11 +708,9 @@ function createControls() {
 
             if (key == left) {
                 movingLeft = false;
-                //chicken.update(stationary);
             }
             if (key == right) {
                 movingRight = false;
-                //chicken.update(stationary);
             }
             if (key == up) {
                 chicken.update(stationary);
