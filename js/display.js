@@ -1,7 +1,8 @@
 /*
 TO-DO:
-1. Make cars faster as score goes up.
-2. Add trucks, trains, water.
+1. Add random drops that impart invincibility for 10 seconds. 
+2. Make cars faster as score goes up.
+3. Add trucks, trains, water.
 */
 
 
@@ -615,9 +616,9 @@ function loop(){
     var chickenDirection = new THREE.Vector3(0, 0, 0);
 
     // check to see whether we need to generate new ground
-    if (camera.position.x == initialCameraPosition + 120) {
+    if (camera.position.x >= initialCameraPosition + 120) {
         createGround(120, farthestPixel+120);
-        initialCameraPosition = camera.position.x;
+        initialCameraPosition = Math.floor(camera.position.x / 120) * 120;
         farthestPixel += 120;
     }
 
@@ -658,7 +659,12 @@ function loop(){
 
     // Move the camera forward
     if (moveCamera) {
-        camera.position.x += 2.5;
+        if (chicken.mesh.position.x > camera.position.x + 360) {
+            camera.position.x += 5;
+        }
+        else {
+            camera.position.x += 2.5;
+        }
     }
 
     // render the scene
