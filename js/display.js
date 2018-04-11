@@ -54,6 +54,7 @@ var firstLanes = [];
 var markers = [];
 var powerUps = [];
 var invincible = 0;
+var keys = Object.keys(Colors);
 
 if (highscore == null) {
     highscore = 0;
@@ -446,7 +447,6 @@ function orientAndPlaceCars(carsPerRoad, firstLane) {
 function createCar(numCars, lanesPerRoad, currRoadNumber) {
     for (var i = 0; i < numCars; i+=1) {
         car = new policeCar();
-        car.name = currRoadNumber;
         var firstLaneOfThisRoad = firstLanes[currRoadNumber];
         car.mesh.position.y = 18;
 
@@ -456,6 +456,7 @@ function createCar(numCars, lanesPerRoad, currRoadNumber) {
         else {
             car.mesh.position.x = firstLaneOfThisRoad + 120*i;  
         }
+        car.name = car.mesh.position.x;
         cars.push(car);
     }
 
@@ -596,7 +597,7 @@ function removePassedItems() {
         }
     }
     for (var i = cars.length-1; i>=0; i-=1) {
-        if (cars[i].name == firstLanes.length-11 && typeof(cars[i].name) == 'number') {
+        if (cars[i].name <= camera.position.x - 1500 && typeof(cars[i].name) == 'number') {
             scene.remove(cars[i].mesh);
             cars.splice(i, 1);
         } 
@@ -639,7 +640,7 @@ function checkCollisions() {
             scene.remove(powerUps[i].mesh);
             powerUps.splice(i, 1);
             var invincibleSeconds = 10   
-            invincible = 60 * invincibleSeconds; 
+            invincible = 60 * invincibleSeconds;
             replaceChicken(Colors.golden);
         }
     }   
@@ -662,7 +663,6 @@ var moveCamera = false;
 var previousInvincible = 0;
 
 function loop(){
-
     var direction = new THREE.Vector3(0, 0, 1);
     var chickenDirection = new THREE.Vector3(0, 0, 0);
 
