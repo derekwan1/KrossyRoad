@@ -52,6 +52,8 @@ var score = 0;
 var highscore = localStorage.getItem("highscore");
 var firstLanes = [];
 var markers = [];
+var powerUps = [];
+var invincible = 0;
 
 if (highscore == null) {
     highscore = 0;
@@ -256,26 +258,26 @@ function createTire(radiusTop, radiusBottom, height, radialSegments, color, x, y
 /**
  * Template objects
  */
- function Chicken() {
+ function Chicken(color) {
 
     this.mesh = new THREE.Object3D();
 
-    var head = createBox(20, 40, 30, Colors.white, 0, 40, 0);
+    var head = createBox(20, 40, 30, color, 0, 40, 0);
     var beak = createBox(6, 6, 10, Colors.orange, 0, 50, 20);
     var gobble = createBox(6, 8, 6, Colors.red, 0, 43, 18.5);
     var hat = createBox(9, 6, 12.5, Colors.red, 0, 63, 0);
     var rightEye = createBox(4, 4, 4, Colors.black, -9, 50, 5);
     var leftEye = createBox(4, 4, 4, Colors.black, 9, 50, 5);
-    var rightWing = createBox(10, 10, 30, Colors.white, -13, 30, -5);
-    var leftWing = createBox(10, 10, 30, Colors.white, 13, 30, -5);
+    var rightWing = createBox(10, 10, 30, color, -13, 30, -5);
+    var leftWing = createBox(10, 10, 30, color, 13, 30, -5);
 
     var rightLeg = createBox(5, 28, 5, Colors.orange, -7, 15, -5);
     var leftLeg = createBox(5, 28, 5, Colors.orange, 7, 15, -5);
     var rightFoot = createBox(10, 2, 10, Colors.orange, -7, 0, -5);
     var leftFoot = createBox(10, 2, 10, Colors.orange, 7, 0, -5);
 
-    var tail = createBox(20, 20, 10, Colors.white, 0, 30, -21);
-    var tailEnd = createBox(10, 10, 5, Colors.white, 0, 30, -29);
+    var tail = createBox(20, 20, 10, color, 0, 30, -21);
+    var tailEnd = createBox(10, 10, 5, color, 0, 30, -29);
 
     this.mesh.add(head);
     this.mesh.add(beak);
@@ -292,7 +294,7 @@ function createTire(radiusTop, radiusBottom, height, radialSegments, color, x, y
     this.mesh.add(tail);
     this.mesh.add(tailEnd);
 
-    this.mesh.rotation.y = -Math.PI/2;
+    this.mesh.rotation.y = Math.PI/2;
 
     this.orient = function(direction) {
         if (direction.z < 0) {
@@ -377,6 +379,18 @@ function policeCar() {
     }
 }
 
+function createPowerUp() {
+
+    this.mesh = new THREE.Object3D();
+
+    var body = createBox(50, 10, 50, Colors.white, 0, 0, 0 );
+    var target = createCylinder(10, 1, 2, 20, Colors.red, 0, 5, 0);
+
+    this.bodySize = 25;
+    this.mesh.add(body);
+    this.mesh.add(target);
+}
+
 function firstLane(currRoadNumber, lanesPerRoad) {
     // Returns the x-coordinates to place a car in the first lane of a given road
     return (Math.floor(currRoadNumber/lanesPerRoad) * 480) + 120;
@@ -454,7 +468,7 @@ function createCar(numCars, lanesPerRoad, currRoadNumber) {
 }
 
 function createChicken() {
-    chicken = new Chicken();
+    chicken = new Chicken(Colors.white);
     scene.add(chicken.mesh);
 }
 
@@ -526,6 +540,18 @@ function createGround(pixelsToReplace, farthestPixelDisplaying) {
             currRoadLanes += 1;
         }
         if (isGround == true) {
+            // Create a power up once every 6 grounds
+            givePowerUp = Math.floor(Math.random() * 6);
+            if (givePowerUp == 0) {
+                powerUp = new createPowerUp();
+                powerUp.mesh.position.y = 0;
+                powerUp.mesh.position.z = 0;
+                powerUp.mesh.position.x = farthestPixelDisplaying-60;
+                powerUp.name = firstLanes.length-3;
+                powerUps.push(powerUp);
+                scene.add(powerUp.mesh);
+            }
+
             if (currRoadLanes == 0) {
                 newGround = createBox(120, 20, 3500, Colors.greenDark, farthestPixelDisplaying-60, -10, -150);
                 scene.add(newGround);
@@ -570,7 +596,7 @@ function removePassedItems() {
         }
     }
     for (var i = cars.length-1; i>=0; i-=1) {
-        if (cars[i].name == firstLanes.length-5 && typeof(cars[i].name) == 'number') {
+        if (cars[i].name == firstLanes.length-11 && typeof(cars[i].name) == 'number') {
             scene.remove(cars[i].mesh);
             cars.splice(i, 1);
         } 
@@ -583,6 +609,18 @@ function removePassedItems() {
     }
 }
 
+function replaceChicken(color) {
+    x = chicken.mesh.position.x;
+    y = chicken.mesh.position.y;
+    z = chicken.mesh.position.z;
+    scene.remove(chicken.mesh);
+    chicken = new Chicken(color);
+    chicken.mesh.position.x = x;
+    chicken.mesh.position.y = y;
+    chicken.mesh.position.z = z;
+    scene.add(chicken.mesh);
+}
+
 function checkCollisions() {
     chicken_z = chicken.mesh.position.z
     chicken_x = chicken.mesh.position.x;
@@ -593,6 +631,18 @@ function checkCollisions() {
             gameOver();
         }
     }
+    for (var i =0; i<powerUps.length; i+=1) {
+        powerUp_z = powerUps[i].mesh.position.z;
+        powerUp_x = powerUps[i].mesh.position.x;
+
+        if ((chicken_z >= powerUp_z - powerUps[i].bodySize/2) && (chicken_z <= powerUp_z + powerUps[i].bodySize/2) && (powerUp_x == chicken_x)) {
+            scene.remove(powerUps[i].mesh);
+            powerUps.splice(i, 1);
+            var invincibleSeconds = 10   
+            invincible = 60 * invincibleSeconds; 
+            replaceChicken(Colors.golden);
+        }
+    }   
 }
 
 function gameOver(){
@@ -609,6 +659,7 @@ var movingBackward = false;
 var initialCameraPosition = -150;
 var farthestPixel = 1500;
 var moveCamera = false;
+var previousInvincible = 0;
 
 function loop(){
 
@@ -644,8 +695,17 @@ function loop(){
     }
 
     // Check for collisions with cars
-    checkCollisions();
-
+    if (! (invincible)) {
+        checkCollisions();  
+    }
+    else {
+        // Check whether invincibility has run out
+        previousInvincible = invincible;
+        invincible -= 1;
+        if (previousInvincible && ! invincible) {
+            replaceChicken(Colors.white);
+        }
+    }
     // Update score
     score = chicken.mesh.position.x / 120;
     document.getElementById("time").innerHTML = score;
