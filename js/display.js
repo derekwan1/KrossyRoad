@@ -396,7 +396,7 @@ function firstLane(currRoadNumber, lanesPerRoad) {
     return (Math.floor(currRoadNumber/lanesPerRoad) * 480) + 120;
 }
 
-function orientAndPlaceCars(carsPerRoad, firstLane) {
+function orientAndPlaceCars(carsPerRoad, firstLane, lanesPerRoad) {
 
     usedPositions = {};
 
@@ -417,7 +417,12 @@ function orientAndPlaceCars(carsPerRoad, firstLane) {
             }
 
             // Add information about whether to speed up the car
-            isSpedUp = Math.floor(Math.random() * 15);
+            if (lanesPerRoad == 1) {
+                isSpedUp = 40;
+            }
+            else {
+                isSpedUp = Math.floor(Math.random() * 15);
+            }
             speedFactor = 1 + 0.1*isSpedUp;
 
             usedPositions[String(curr_car_lane)].push(rotation);
@@ -460,7 +465,7 @@ function createCar(numCars, lanesPerRoad, currRoadNumber) {
     }
 
     // HARDCODED 3 CARS PER LANE HERE AS WELL!!!!!
-    orientAndPlaceCars(3*lanesPerRoad, firstLaneOfThisRoad);
+    orientAndPlaceCars(3*lanesPerRoad, firstLaneOfThisRoad, lanesPerRoad);
 
     for (var i = cars.length-numCars; i < cars.length; i+=1) {
         scene.add(cars[i].mesh);
