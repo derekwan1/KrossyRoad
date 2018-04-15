@@ -54,7 +54,6 @@ var firstLanes = [];
 var markers = [];
 var powerUps = [];
 var invincible = 0;
-var keys = Object.keys(Colors);
 
 if (highscore == null) {
     highscore = 0;
@@ -418,7 +417,7 @@ function orientAndPlaceCars(carsPerRoad, firstLane) {
             }
 
             // Add information about whether to speed up the car
-            isSpedUp = Math.floor(Math.random() * 8);
+            isSpedUp = Math.floor(Math.random() * 15);
             speedFactor = 1 + 0.1*isSpedUp;
 
             usedPositions[String(curr_car_lane)].push(rotation);
@@ -541,8 +540,8 @@ function createGround(pixelsToReplace, farthestPixelDisplaying) {
             currRoadLanes += 1;
         }
         if (isGround == true) {
-            // Create a power up once every 6 grounds
-            givePowerUp = Math.floor(Math.random() * 6);
+            // Create a power up once every 9 grounds
+            givePowerUp = Math.floor(Math.random() * 9);
             if (givePowerUp == 0) {
                 powerUp = new createPowerUp();
                 powerUp.mesh.position.y = 0;
@@ -753,13 +752,29 @@ function createControls() {
             key = ev.keyCode;
 
             if (key == left) {
+              if (chicken.mesh.position.z >= -340) {
                 movingLeft = true;
+              }
+              else { 
+                movingLeft = false;
+              }
+              
             }
             if (key == right) {
-                movingRight = true;
+                if (chicken.mesh.position.z <= 300) {
+                  movingRight = true;
+                }
+                else {
+                  movingRight = false;
+                }
             }
             if (key == up) {
-                chicken.update(newForward);
+              if (chicken.mesh.position.x <= farthestPixel-840) {
+                  chicken.update(newForward);
+              }
+              else {
+                chicken.update(stationary);
+              }
             }
             if (key == down) {
                 chicken.update(newBackward);
