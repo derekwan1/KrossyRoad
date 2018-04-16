@@ -1,10 +1,6 @@
 /*
 TO-DO:
-1. Add random drops that impart invincibility for 10 seconds. 
-2. Make cars faster as score goes up.
-3. Add trucks, trains, water.
-*/
-
+*/ 
 
 
 /**
@@ -31,7 +27,8 @@ var Colors = {
     green:0x669900,
     greenDark:0x496d01,
     golden:0xff9900,
-    darkBlue: 0x1341c1
+    darkBlue: 0x1341c1,
+    lightBlue: 0xadd8e6
 };
 
 /**
@@ -54,6 +51,8 @@ var firstLanes = [];
 var markers = [];
 var powerUps = [];
 var invincible = 0;
+var invincibleMoses = 0;
+var slowDown = 0;
 
 if (highscore == null) {
     highscore = 0;
@@ -232,6 +231,16 @@ function createBox(dx, dy, dz, color, x, y, z, notFlatShading) {
     return box;
 }
 
+function createSphere(dx, dy, dz, color, x, y, z, notFlatShading) {
+    var geometry = new THREE.SphereGeometry(dx, dy, dz);
+    var material = new THREE.MeshPhongMaterial({color:color, flatShading: notFlatShading != true});
+    var sphere = new THREE.Mesh(geometry, material);
+    sphere.castShadow = true;
+    sphere.receiveShadow = true;
+    sphere.position.set( x, y, z );
+    return sphere;
+}
+
 /**
  * Generic cylinder that casts and receives shadows
  */
@@ -258,7 +267,7 @@ function createTire(radiusTop, radiusBottom, height, radialSegments, color, x, y
 /**
  * Template objects
  */
- function Chicken(color) {
+ function Chicken(color, colorString) {
 
     this.mesh = new THREE.Object3D();
 
@@ -295,6 +304,7 @@ function createTire(radiusTop, radiusBottom, height, radialSegments, color, x, y
     this.mesh.add(tailEnd);
 
     this.mesh.rotation.y = Math.PI/2;
+    this.color = colorString;
 
     this.orient = function(direction) {
         if (direction.z < 0) {
@@ -368,13 +378,21 @@ function policeCar() {
     this.speed = -6;
     this.speedUpFactor = 1;
     this.bodySize = 100;
+    this.descending = false;
 
     this.update = function(direction) {
+        if (slowDown > 0) {
+            this.slowDownFactor = 4;
+        }
+        if (slowDown == 0) {
+            this.slowDownFactor = 1;
+        }
         if (this.mesh.rotation.y > 0) {
-            this.mesh.position.addScaledVector(direction, this.speed*this.speedUpFactor);
+            direction.y = -direction.y;
+            this.mesh.position.addScaledVector(direction, this.speed*this.speedUpFactor*(1/this.slowDownFactor));
         }
         else {
-            this.mesh.position.addScaledVector(direction, -this.speed*this.speedUpFactor);
+            this.mesh.position.addScaledVector(direction, -this.speed*this.speedUpFactor*(1/this.slowDownFactor));
         }  
     }
 }
@@ -389,6 +407,22 @@ function createPowerUp() {
     this.bodySize = 25;
     this.mesh.add(body);
     this.mesh.add(target);
+}
+
+function createMosesEffect() {
+    this.mesh = new THREE.Object3D();
+
+    var body = createSphere(20, 100, 100, Colors.white, 0, 0, 0);
+    this.bodySize = 30;
+    this.mesh.add(body);
+}
+
+function createFreezeEffect() {
+    this.mesh = new THREE.Object3D();
+
+    var body = createBox(40, 40, 40, Colors.lightBlue, 0, 0,0 );
+    this.bodySize = 40;
+    this.mesh.add(body);
 }
 
 function firstLane(currRoadNumber, lanesPerRoad) {
@@ -473,7 +507,7 @@ function createCar(numCars, lanesPerRoad, currRoadNumber) {
 }
 
 function createChicken() {
-    chicken = new Chicken(Colors.white);
+    chicken = new Chicken(Colors.white, 'white');
     scene.add(chicken.mesh);
 }
 
@@ -531,6 +565,14 @@ function createGround(pixelsToReplace, farthestPixelDisplaying) {
         createCar(9, 3, 0);
         createCar(9, 3, 1);
         createCar(9, 3, 2);
+
+        moses = new createMosesEffect();
+        scene.add(moses.mesh);
+        moses.mesh.position.y = 10;
+        moses.mesh.position.x = 480;
+        moses.mesh.position.z = 0;
+        moses.name = 'moses';
+        powerUps.push(moses);
     }
 
     else {
@@ -545,16 +587,19 @@ function createGround(pixelsToReplace, farthestPixelDisplaying) {
             currRoadLanes += 1;
         }
         if (isGround == true) {
-            // Create a power up once every 9 grounds
-            givePowerUp = Math.floor(Math.random() * 9);
+            // Create a power up / freeze effect / moses effect
+            giveFreeze = Math.floor(Math.random() * 20);
+            givePowerUp = Math.floor(Math.random() * 30);
+            giveMoses = Math.floor(Math.random() * 40);
+
             if (givePowerUp == 0) {
-                powerUp = new createPowerUp();
-                powerUp.mesh.position.y = 0;
-                powerUp.mesh.position.z = 0;
-                powerUp.mesh.position.x = farthestPixelDisplaying-60;
-                powerUp.name = firstLanes.length-3;
-                powerUps.push(powerUp);
-                scene.add(powerUp.mesh);
+                generatePowerUp(currRoadLanes, farthestPixelDisplaying, 'powerup');
+            }
+            if (giveFreeze == 0) {
+                generatePowerUp(currRoadLanes, farthestPixelDisplaying, 'freeze');
+            }
+            if (giveMoses == 0) {
+                generatePowerUp(currRoadLanes, farthestPixel, 'moses');
             }
 
             if (currRoadLanes == 0) {
@@ -612,40 +657,119 @@ function removePassedItems() {
             markers.splice(i, 1);
         } 
     }
+    for (var i = powerUps.length-1; i>=0; i-=1) {
+        try {
+            name = powerUps[i].name1;
+        }
+        catch(error) {
+            name = powerUps[i].name;
+        }
+        if (name <= firstLanes.length-11 && typeof(name) == 'number') {
+            scene.remove(powerUps[i].mesh);
+            powerUps.splice(i, 1);
+        }
+    }
 }
 
-function replaceChicken(color) {
+function replaceChicken(color, colorString) {
     x = chicken.mesh.position.x;
     y = chicken.mesh.position.y;
     z = chicken.mesh.position.z;
     scene.remove(chicken.mesh);
-    chicken = new Chicken(color);
+    chicken = new Chicken(color, colorString);
     chicken.mesh.position.x = x;
     chicken.mesh.position.y = y;
     chicken.mesh.position.z = z;
     scene.add(chicken.mesh);
 }
 
-function checkCollisions() {
+function generatePowerUp(currRoadLanes, farthestPixelDisplaying, type) {
+    posOrNeg = Math.floor(Math.random() * 1)
+    if (posOrNeg == 0) {
+       factor = 1;
+    }
+    else {
+        factor = -1;
+    }
+
+    if (type == 'powerup') {
+        powerUp = new createPowerUp();
+        powerUp.mesh.position.y = 0;
+        powerUp.mesh.position.z = factor * Math.floor(Math.random() * 200);
+        powerUp.mesh.position.x = farthestPixelDisplaying-60-(120*Math.floor(Math.random() * currRoadLanes));
+        powerUp.name = firstLanes.length-3;
+        powerUps.push(powerUp);
+        scene.add(powerUp.mesh);
+    }
+    if (type=='moses') {
+        moses = new createMosesEffect();
+        moses.mesh.position.y = 10;
+        moses.mesh.position.z = factor * Math.floor(Math.random() * 200);
+        moses.mesh.position.x = farthestPixelDisplaying-60-(120*Math.floor(Math.random() * currRoadLanes));
+        moses.name = 'moses';
+        moses.name1 = firstLanes.length-3;
+        powerUps.push(moses);
+        scene.add(moses.mesh);
+    }
+
+    if (type=='freeze') {
+        iceCube = new createFreezeEffect();
+        iceCube.mesh.position.y = 20;
+        iceCube.mesh.position.z = factor * Math.floor(Math.random() * 200);
+        iceCube.mesh.position.x = farthestPixelDisplaying-60-(120*Math.floor(Math.random() * currRoadLanes));
+        iceCube.name = 'freeze';
+        iceCube.name1 = firstLanes.length-3;
+        powerUps.push(iceCube);
+        scene.add(iceCube.mesh);
+    }
+}
+function checkCollisions(isInvincible) {
     chicken_z = chicken.mesh.position.z
     chicken_x = chicken.mesh.position.x;
-    for (var i = 0; i<cars.length;i+=1) {
-        car_z = cars[i].mesh.position.z;
-        car_x = cars[i].mesh.position.x;
-        if ((chicken_z >= car_z - cars[i].bodySize/2) && (chicken_z <= car_z + cars[i].bodySize/2) && (car_x == chicken_x)) {
-            gameOver();
+    if (! isInvincible) {
+        for (var i = 0; i<cars.length;i+=1) {
+            car_z = cars[i].mesh.position.z;
+            car_x = cars[i].mesh.position.x;
+            car_y = cars[i].mesh.position.y;
+            if ((chicken_z >= car_z - cars[i].bodySize/2) && (chicken_z <= car_z + cars[i].bodySize/2) && (car_x == chicken_x) && (car_y == 18)) {
+                gameOver();
+            }
         }
     }
     for (var i =0; i<powerUps.length; i+=1) {
         powerUp_z = powerUps[i].mesh.position.z;
         powerUp_x = powerUps[i].mesh.position.x;
-
         if ((chicken_z >= powerUp_z - powerUps[i].bodySize/2) && (chicken_z <= powerUp_z + powerUps[i].bodySize/2) && (powerUp_x == chicken_x)) {
+            name = powerUps[i].name;
             scene.remove(powerUps[i].mesh);
             powerUps.splice(i, 1);
-            var invincibleSeconds = 10   
-            invincible = 60 * invincibleSeconds;
-            replaceChicken(Colors.golden);
+
+            var invincibleSeconds = 7.5;
+            if (name == 'moses') {
+                invincibleMoses = 60 * invincibleSeconds;
+                color = Colors.green;
+                colorString = 'green';
+                // Makes sure that powerup effects don't stack.
+                slowDown = 0;
+                invincible = 0;
+            }
+            else if (name == 'freeze') {
+                slowDown = 60*invincibleSeconds;
+                color = Colors.lightBlue;
+                colorString = 'lightBlue';
+                // Makes sure that powerup effects don't stack.
+                invincible = 0;
+                invincibleMoses = 0;
+            }
+            else if (typeof(eval(name)) == 'number') {
+                invincible = 60 * invincibleSeconds;
+                color = Colors.golden;
+                colorString = 'golden';
+                // Makes sure that powerup effects don't stack.
+                slowDown = 0;
+                invincibleMoses = 0;
+            }
+            replaceChicken(color, colorString);
         }
     }   
 }
@@ -664,10 +788,11 @@ var movingBackward = false;
 var initialCameraPosition = -150;
 var farthestPixel = 1500;
 var moveCamera = false;
+var previousInvincibleMoses = 0;
 var previousInvincible = 0;
+var previousFreeze = 0;
 
 function loop(){
-    var direction = new THREE.Vector3(0, 0, 1);
     var chickenDirection = new THREE.Vector3(0, 0, 0);
 
     // check to see whether we need to generate new ground
@@ -689,25 +814,67 @@ function loop(){
 
     // Update each car's position
     for (var i = 0; i<cars.length;i+=1) {
+        if ((invincibleMoses > 0 && Math.abs(cars[i].mesh.position.z - chicken.mesh.position.z) <= 240 && cars[i].mesh.position.x == chicken.mesh.position.x) || cars[i].descending) {
+                direction = new THREE.Vector3(0, -1, 1);
+                cars[i].descending = true;
+        }
+        else {
+            var direction = new THREE.Vector3(0, 0, 1);
+        }
+
         cars[i].update(direction);
 
         var checkDirection = cars[i].mesh.rotation.y / Math.abs(cars[i].mesh.rotation.y);
 
         if (Math.abs(cars[i].mesh.position.z) > 900 && checkDirection == -cars[i].mesh.position.z/Math.abs(cars[i].mesh.position.z)) {
             cars[i].mesh.position.z = -cars[i].mesh.position.z;
+            cars[i].mesh.position.y = 18;
+            cars[i].descending = false;
         }
     }
 
-    // Check for collisions with cars
-    if (! (invincible)) {
-        checkCollisions();  
+    if (invincibleMoses > 0) {
+        previousInvincibleMoses = invincibleMoses;
+        invincibleMoses -= 1;
     }
     else {
-        // Check whether invincibility has run out
-        previousInvincible = invincible;
-        invincible -= 1;
-        if (previousInvincible && ! invincible) {
-            replaceChicken(Colors.white);
+        if (previousInvincibleMoses && ! invincibleMoses) {
+            // Another powerup might be activated right now, so only switch to white if the chicken only has the moses effect
+            if (chicken.color == 'green') {
+                replaceChicken(Colors.white, 'white');
+            }
+            previousInvincibleMoses = 0;
+        }
+    }
+
+    if (slowDown > 0) {
+        previousFreeze = slowDown;
+        slowDown -= 1;
+    }
+    else {
+        if (previousFreeze && ! slowDown) {
+            // Another powerup might be activated right now, so only switch to white if the chicken only has the freeze effect
+            if (chicken.color=='lightBlue') {
+                replaceChicken(Colors.white, 'white');
+            }
+            previousFreeze = 0;
+        }  
+    }
+
+    // Check for collisions with cars
+    if (! (invincible) && ! invincibleMoses) {
+        // false means that the chicken is currently not invincible
+        checkCollisions(false);
+    }
+    else {
+        checkCollisions(true);
+        if (invincible) {
+            // Check whether invincibility has run out
+            previousInvincible = invincible;
+            invincible -= 1;
+            if (previousInvincible && ! invincible) {
+                replaceChicken(Colors.white, 'white');
+            }
         }
     }
     // Update score
@@ -738,7 +905,6 @@ function loop(){
     requestAnimationFrame(loop);
 }
 
-// init();  // uncomment for JSFiddle, wraps code in onLoad eventListener
 var left = 37;
 var right = 39;
 var up = 38;
@@ -809,3 +975,4 @@ function createControls() {
     );
 }
 window.addEventListener('load', init, false);
+// init();  // uncomment for JSFiddle, wraps code in onLoad eventListener
