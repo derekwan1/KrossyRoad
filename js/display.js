@@ -28,7 +28,9 @@ var Colors = {
     greenDark:0x496d01,
     golden:0xff9900,
     darkBlue: 0x1341c1,
-    lightBlue: 0xadd8e6
+    lightBlue: 0xadd8e6, 
+    yellow: 0xc5c500, 
+    darkYellow: 0x969602
 };
 
 /**
@@ -304,26 +306,122 @@ function createTire(radiusTop, radiusBottom, height, radialSegments, color, x, y
     this.mesh.add(tailEnd);
 
     this.mesh.rotation.y = Math.PI/2;
+    goal = Math.PI/2;
     this.color = colorString;
+
 
     this.orient = function(direction) {
         if (direction.z < 0) {
-            this.mesh.rotation.y = Math.PI;
+            goal = Math.PI;
         }
         if (direction.z > 0) {
-            this.mesh.rotation.y = 0;
+            goal = 0;
         }
         if (direction.x > 0) {
-            this.mesh.rotation.y = Math.PI/2;
+            goal = Math.PI/2;
         }
         if (direction.x < 0) {
-            this.mesh.rotation.y = -Math.PI/2;
+            goal = 3*Math.PI/2;
+        }
+
+        if (this.mesh.rotation.y != goal) {
+            difference = this.mesh.rotation.y - goal;
+
+            if (goal < this.mesh.rotation.y) {
+                if (difference > Math.PI) {
+                        this.mesh.rotation.y += Math.PI/20;
+                    }
+                else {
+                    this.mesh.rotation.y -= Math.PI/20;
+                }
+            }
+
+            if (goal > this.mesh.rotation.y) {
+                if (difference < -Math.PI) {
+                    this.mesh.rotation.y -= Math.PI/20;
+                }
+
+                else {
+                    this.mesh.rotation.y += Math.PI/20;
+                }
+            }
+            this.mesh.rotation.y = this.mesh.rotation.y % (2*Math.PI);
         }
     }
 
     this.update = function(direction) {
         this.orient(direction);
         this.mesh.position.addScaledVector(direction, 120);
+    }
+}
+
+function Car() {
+
+    this.mesh = new THREE.Object3D();
+
+    var body = createBox( 100, 30, 50, Colors.yellow, 0, 0, 0 );
+    var roof = createBox( 60, 20, 45, Colors.white, -10, 25, 0);
+    var bumper = createBox( 90, 10, 45, bumperColor, 10, -10, 0 );
+    var headLightLeft = createBox( 5, 5, 5, Colors.white, 50, 5, 15 );
+    var headLightRight = createBox( 5, 5, 5, Colors.white, 50, 5, -15 );
+    var tailLightLeft = createBox( 5, 5, 10, Colors.darkYellow, -50, 5, 21)
+    var tailLightRight = createBox( 5, 5, 10, Colors.darkYellow, -50, 5, -21)
+    var grate = createBox( 5, 5, 15, grateColor, 50, 5, 0 );
+    var frontLeftTire = createTire( 10, 10, 10, 32, Colors.black, 30, -12, 23 );
+    var frontRightTire = createTire( 10, 10, 10, 32, Colors.black, 30, -12, -23 );
+    var backLeftTire = createTire( 10, 10, 10, 32, Colors.black, -30, -12, 23 );
+    var backRightTire = createTire( 10, 10, 10, 32, Colors.black, -30, -12, -23 );
+    var leftMirror = createBox(5, 5, 15, Colors.darkYellow, 20, 10, 23);
+    var rightMirror = createBox(5, 5, 15, Colors.darkYellow, 20, 10, -23)
+    var backWindowLeft = createBox(8, 18, 2, Colors.black, -30, 20, -22.5);
+    var backWindowRight = createBox(8, 18, 2, Colors.black, -30, 20, 22.5);
+    var frontWindowLeft = createBox(30, 18, 2, Colors.black, -5, 20, -22.5);
+    var frontWindowRight = createBox(30, 18, 2, Colors.black, -5, 20, 22.5);
+    var frontWindowFront = createBox(1, 18, 30, Colors.black, 20, 20, 0);
+    var backWindowFront = createBox(1, 18, 30, Colors.black, -40, 20, 0);
+    var roofCap = createBox(18, 10, 35, Colors.yellow, -10, 35, 0);
+
+    this.mesh.add(body);
+    this.mesh.add(roof);
+    this.mesh.add(bumper);
+    this.mesh.add(headLightLeft);
+    this.mesh.add(headLightRight);
+    this.mesh.add(tailLightLeft);
+    this.mesh.add(tailLightRight);
+    this.mesh.add(grate);
+    this.mesh.add(frontLeftTire);
+    this.mesh.add(frontRightTire);
+    this.mesh.add(backLeftTire);
+    this.mesh.add(backRightTire);
+    this.mesh.add(leftMirror);
+    this.mesh.add(rightMirror);
+    this.mesh.add(backWindowLeft);
+    this.mesh.add(backWindowRight);
+    this.mesh.add(frontWindowLeft);
+    this.mesh.add(frontWindowRight);
+    this.mesh.add(frontWindowFront);
+    this.mesh.add(backWindowFront);
+    this.mesh.add(roofCap);
+
+    this.speed = -6;
+    this.speedUpFactor = 1;
+    this.bodySize = 100;
+    this.descending = false;
+
+    this.update = function(direction) {
+        if (slowDown > 0) {
+            this.slowDownFactor = 4;
+        }
+        if (slowDown == 0) {
+            this.slowDownFactor = 1;
+        }
+        if (this.mesh.rotation.y > 0) {
+            direction.y = -direction.y;
+            this.mesh.position.addScaledVector(direction, this.speed*this.speedUpFactor*(1/this.slowDownFactor));
+        }
+        else {
+            this.mesh.position.addScaledVector(direction, -this.speed*this.speedUpFactor*(1/this.slowDownFactor));
+        }  
     }
 }
 
@@ -675,11 +773,13 @@ function replaceChicken(color, colorString) {
     x = chicken.mesh.position.x;
     y = chicken.mesh.position.y;
     z = chicken.mesh.position.z;
+    old_orientation = chicken.mesh.rotation.y;
     scene.remove(chicken.mesh);
     chicken = new Chicken(color, colorString);
     chicken.mesh.position.x = x;
     chicken.mesh.position.y = y;
     chicken.mesh.position.z = z;
+    chicken.mesh.rotation.y = old_orientation;
     scene.add(chicken.mesh);
 }
 
@@ -891,10 +991,10 @@ function loop(){
     // Move the camera forward
     if (moveCamera) {
         if (chicken.mesh.position.x > camera.position.x + 360) {
-            camera.position.x += 5;
+            camera.position.x += 6;
         }
         else {
-            camera.position.x += 2.5;
+            camera.position.x += 1;
         }
     }
 
