@@ -832,7 +832,7 @@ function checkCollisions(isInvincible) {
             car_x = cars[i].mesh.position.x;
             car_y = cars[i].mesh.position.y;
             if ((chicken_z >= car_z - cars[i].bodySize/2) && (chicken_z <= car_z + cars[i].bodySize/2) && (car_x == chicken_x) && (car_y == 18)) {
-                gameOver();
+                gameOver(1);
             }
         }
     }
@@ -874,8 +874,13 @@ function checkCollisions(isInvincible) {
     }   
 }
 
-function gameOver(){
-    alert("Mr. Chicken has been run over! Try again!");
+function gameOver(msg){
+    if (msg == 1) {
+        alert("Mr. Chicken has been run over! Try again!");
+    }
+    else {
+        alert("Mr. Chicken has fallen too far behind! Try again!");
+    }
     document.location.reload(true);
     chicken.reload(forcedReload);
 }
@@ -894,6 +899,9 @@ var previousFreeze = 0;
 
 function loop(){
     var chickenDirection = new THREE.Vector3(0, 0, 0);
+    if (camera.position.x >= chicken.mesh.position.x) {
+        gameOver(2);
+    }
 
     // check to see whether we need to generate new ground
     if (camera.position.x >= initialCameraPosition + 120) {
