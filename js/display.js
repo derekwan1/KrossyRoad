@@ -663,14 +663,6 @@ function createGround(pixelsToReplace, farthestPixelDisplaying) {
         createCar(9, 3, 0);
         createCar(9, 3, 1);
         createCar(9, 3, 2);
-
-        moses = new createMosesEffect();
-        scene.add(moses.mesh);
-        moses.mesh.position.y = 10;
-        moses.mesh.position.x = 480;
-        moses.mesh.position.z = 0;
-        moses.name = 'moses';
-        powerUps.push(moses);
     }
 
     else {
@@ -969,22 +961,6 @@ function loop(){
         }  
     }
 
-    // Check for collisions with cars
-    if (! (invincible) && ! invincibleMoses) {
-        // false means that the chicken is currently not invincible
-        checkCollisions(false);
-    }
-    else {
-        checkCollisions(true);
-        if (invincible) {
-            // Check whether invincibility has run out
-            previousInvincible = invincible;
-            invincible -= 1;
-            if (previousInvincible && ! invincible) {
-                replaceChicken(Colors.white, 'white');
-            }
-        }
-    }
     // Update score
     score = chicken.mesh.position.x / 120;
     document.getElementById("time").innerHTML = score;
@@ -1008,6 +984,23 @@ function loop(){
 
     // render the scene
     renderer.render(scene, camera);
+
+    // Check for collisions with cars
+    if (! (invincible) && ! invincibleMoses) {
+        // false means that the chicken is currently not invincible
+        checkCollisions(false);
+    }
+    else {
+        checkCollisions(true);
+        if (invincible) {
+            // Check whether invincibility has run out
+            previousInvincible = invincible;
+            invincible -= 1;
+            if (previousInvincible && ! invincible) {
+                replaceChicken(Colors.white, 'white');
+            }
+        }
+    }
 
     // call the loop function again
     requestAnimationFrame(loop);
