@@ -1022,7 +1022,7 @@ function createControls() {
         'keydown',
         function( ev ) {
             key = ev.keyCode;
-
+            ev.preventDefault()
             if (key == left) {
               if (chicken.mesh.position.z >= -340) {
                 movingLeft = true;
@@ -1058,7 +1058,7 @@ function createControls() {
         'keyup',
         function( ev ) {
             key = ev.keyCode;
-
+            ev.preventDefault()
             if (key == left) {
                 movingLeft = false;
             }
